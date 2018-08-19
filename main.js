@@ -50,7 +50,7 @@
 
 
     playerImage = new Image();
-    playerImage.src = "images/player.png";
+    playerImage.src = "images/feet.png";
 
     bulletImage = new Image();
     bulletImage.src = "images/bullet.png";
@@ -59,10 +59,12 @@
 
 
     // Player
-    function Player(color, x, y) {
+    function Player(x, y, headColor, bodyColor) {
         this.x = x;  //first location
         this.y = y;  //
         this.moving = false;  //for animation (cute feet)
+        this.headColor = headColor;
+        this.bodyColor = bodyColor;
         this.sprite = sprite({       
             context: context,
             width:480,
@@ -70,8 +72,8 @@
             image: playerImage,
             numberOfFrames: 6,
             ticksPerFrame: 6,
-            x : Math.floor(Math.random() * (canvas.width - 100)),      //random location, this is well for now
-            y : Math.floor(Math.random() * (canvas.height - 100))
+            x : this.x,
+            y : this.y
         }) 
 
 
@@ -128,17 +130,30 @@
 
     // methods
     Player.prototype.move = function(sign, xOrY) {
-        this.sprite[xOrY] += sign * this.speed;
+        this[xOrY] += sign * this.speed;
+        this.sprite[xOrY] = this[xOrY];
         this.moving = true;     // for animation
     }
 
+    Player.prototype.draw = function() {
+        //draw for testing
+        drawRectangle(0,0, 50,50, "#000000");
+        // draw head
+        drawRectangle(this.x + 20, this.y+5, 40, 35, this.headColor);
+        // draw neck
+        drawRectangle(this.x + 25, this.y+40, 30, 5, this.headColor);
+        // draw body
+        drawRectangle(this.x + 5, this.y+45, 70, 60, this.bodyColor);
+    }
 
-    // players creating
-    var p1 = new Player("#FF0000", 0,0),
-        p2 = new Player("#00FF00", 350,150);
+
+    // players creating     
+    var p1 = new Player(0,0, "#ffd1ab", "#bae1ff");
+        p2 = new Player(0,0, "#ffd1ab", "#baffc9");
+
     
-    // the pulse of the players control
-    pulseControl = function () {
+    // the pulse of the player
+    var pulseControl = function () {
         if(p1.hp <= 0) {
             console.log("player 2 kazandı!");
         } else if (p2.hp <= 0) {
@@ -275,8 +290,16 @@
     var way, min, max;
 
     // ^ testing
+    
 
-
+    var drawRectangle = function (x, y, width, height, color) {
+        context.beginPath();
+        context.moveTo(x, y+(height/2));
+        context.lineTo(x+width, y+(height/2));
+        context.lineWidth = height;
+        context.strokeStyle = color;
+        context.stroke();
+    }
 
     function gameLoop() {
 
@@ -359,14 +382,16 @@
 
         //draw players
         p1.sprite.render();
+        p1.draw();
     
         if(p2.moving) {
             p2.sprite.update();
         }
         p2.sprite.render();
+        p2.draw();
 
         //draw bullets
-        if(!p1.bullet.ready){
+        if(!p1.bullet.ready){   //the bullet going
             p1.bullet.x += p1.bullet.directionSign * p1.bullet.xSpeed;
             p1.bullet.y += p1.bullet.directionSign * p1.bullet.ySpeed;
             context.drawImage(bulletImage, p1.bullet.x, p1.bullet.y, 10, 10);
@@ -376,14 +401,13 @@
             p2.bullet.y += p2.bullet.directionSign * p2.bullet.ySpeed;
             context.drawImage(bulletImage, p2.bullet.x, p2.bullet.y, 10, 10);
         }
-        
 
         // this line stop animation when release moving keys
         p1.moving = false;  
         p2.moving = false;
 
         //console.log(keys);  //for testing
-        
+
         // player1, to detect keys
         if (68 in keys) {  // right
             p1.move(+1, "x");
@@ -392,8 +416,8 @@
                 p1.bullet.ySpeed = 0;
                 p1.bullet.directionSign = 1;
             }
-            p1.bullet.barrelX = p1.sprite.x + 70;
-            p1.bullet.barrelY = p1.sprite.y + 35;
+            p1.bullet.barrelX = p1.x + 70;
+            p1.bullet.barrelY = p1.y + 35;
         } if (65 in keys) {  // left
             p1.move(-1, "x");
             if(p1.bullet.ready) {
@@ -401,8 +425,8 @@
                 p1.bullet.ySpeed = 0;
                 p1.bullet.directionSign = -1;
             }
-            p1.bullet.barrelX = p1.sprite.x + 0;
-            p1.bullet.barrelY = p1.sprite.y + 35;
+            p1.bullet.barrelX = p1.x + 0;
+            p1.bullet.barrelY = p1.y + 35;
         } if (83 in keys) {  // bottom
             p1.move(+1, "y");
             if(p1.bullet.ready) {
@@ -410,8 +434,8 @@
                 p1.bullet.ySpeed = p1.bullet.speed;
                 p1.bullet.directionSign = +1;
             }
-            p1.bullet.barrelX = p1.sprite.x + 35;
-            p1.bullet.barrelY = p1.sprite.y + 50;
+            p1.bullet.barrelX = p1.x + 35;
+            p1.bullet.barrelY = p1.y + 50;
         } if (87 in keys) {  // top
             p1.move(-1, "y");
             if(p1.bullet.ready) {
@@ -419,8 +443,8 @@
                 p1.bullet.ySpeed = p1.bullet.speed;
                 p1.bullet.directionSign = -1;
             }
-            p1.bullet.barrelX = p1.sprite.x + 55;
-            p1.bullet.barrelY = p1.sprite.y + 35;
+            p1.bullet.barrelX = p1.x + 55;
+            p1.bullet.barrelY = p1.y + 35;
         }
 
         if (70 in keys) {
@@ -429,47 +453,43 @@
 
         // player2, to detect keys
         if (39 in keys) {   // right
-            p2.sprite.x += p2.speed;
-            p2.moving = true;
+            p2.move(+1, 'x');
             if(p2.bullet.ready) {
                 p2.bullet.xSpeed = p2.bullet.speed;
                 p2.bullet.ySpeed = 0;
                 p2.bullet.directionSign = 1;
             }
-            p2.bullet.barrelX = p2.sprite.x + 70;
-            p2.bullet.barrelY = p2.sprite.y + 35;
+            p2.bullet.barrelX = p2.x + 70;
+            p2.bullet.barrelY = p2.y + 35;
 
         } if (37 in keys) {  // left
-            p2.sprite.x -= p2.speed;
-            p2.moving = true;
+            p2.move(-1, 'x');
             if(p2.bullet.ready) {
                 p2.bullet.xSpeed = p2.bullet.speed;
                 p2.bullet.ySpeed = 0;
                 p2.bullet.directionSign = -1;
             }
-            p2.bullet.barrelX = p2.sprite.x + 0;
-            p2.bullet.barrelY = p2.sprite.y + 35;
+            p2.bullet.barrelX = p2.x + 0;
+            p2.bullet.barrelY = p2.y + 35;
         } if (40 in keys) { // bottom
-            p2.sprite.y += p2.speed;
-            p2.moving = true;
+            p2.move(+1, 'y');
             if(p2.bullet.ready) {
                 p2.bullet.xSpeed = 0;
                 p2.bullet.ySpeed = p2.bullet.speed;
                 p2.bullet.directionSign = +1;
             }
-            p2.bullet.barrelX = p2.sprite.x + 35;
-            p2.bullet.barrelY = p2.sprite.y + 50;
+            p2.bullet.barrelX = p2.x + 35;
+            p2.bullet.barrelY = p2.y + 50;
 
         } if (38 in keys) { // top
-            p2.sprite.y -= p2.speed;
-            p2.moving = true;
+            p2.move(-1, 'y');
             if(p2.bullet.ready) {
                 p2.bullet.xSpeed = 0;
                 p2.bullet.ySpeed = p2.bullet.speed;
                 p2.bullet.directionSign = -1;
             }
-            p2.bullet.barrelX = p2.sprite.x + 55;
-            p2.bullet.barrelY = p2.sprite.y + 35;
+            p2.bullet.barrelX = p2.x + 55;
+            p2.bullet.barrelY = p2.y + 35;
         }
 
         if (106 in keys) {
