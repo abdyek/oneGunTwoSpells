@@ -65,6 +65,7 @@
         this.moving = false;  //for animation (cute feet)
         this.headColor = headColor;
         this.bodyColor = bodyColor;
+        this.live = true;
         this.sprite = sprite({       
             context: context,
             width:480,
@@ -148,6 +149,11 @@
         var barWidth = (this.hp <= 0) ? 0:(70 * this.hp / 100)
         drawRectangle(this.x + 5, this.y - 10, barWidth, 7, "#a5ffa0");
     }
+    
+    Player.prototype.die = function() {
+        this.headColor = "#FF3535";
+        this.live = false;
+    }
 
 
     // players creating     
@@ -158,9 +164,9 @@
     // the pulse of the player
     var pulseControl = function () {
         if(p1.hp <= 0) {
-            console.log("player 2 kazandı!");
+            p1.die();
         } else if (p2.hp <= 0) {
-            console.log("player 1 kazandı!");
+            p2.die();
         }
     }
 
@@ -412,93 +418,95 @@
         //console.log(keys);  //for testing
 
         // player1, to detect keys
-        if (68 in keys) {  // right
-            p1.move(+1, "x");
-            if(p1.bullet.ready) {
-                p1.bullet.xSpeed = p1.bullet.speed;
-                p1.bullet.ySpeed = 0;
-                p1.bullet.directionSign = 1;
+        if(p1.live) {
+            if (68 in keys) {  // right
+                p1.move(+1, "x");
+                if(p1.bullet.ready) {
+                    p1.bullet.xSpeed = p1.bullet.speed;
+                    p1.bullet.ySpeed = 0;
+                    p1.bullet.directionSign = 1;
+                }
+                p1.bullet.barrelX = p1.x + 70;
+                p1.bullet.barrelY = p1.y + 35;
+            } if (65 in keys) {  // left
+                p1.move(-1, "x");
+                if(p1.bullet.ready) {
+                    p1.bullet.xSpeed = p1.bullet.speed;
+                    p1.bullet.ySpeed = 0;
+                    p1.bullet.directionSign = -1;
+                }
+                p1.bullet.barrelX = p1.x + 0;
+                p1.bullet.barrelY = p1.y + 35;
+            } if (83 in keys) {  // bottom
+                p1.move(+1, "y");
+                if(p1.bullet.ready) {
+                    p1.bullet.xSpeed = 0;
+                    p1.bullet.ySpeed = p1.bullet.speed;
+                    p1.bullet.directionSign = +1;
+                }
+                p1.bullet.barrelX = p1.x + 35;
+                p1.bullet.barrelY = p1.y + 50;
+            } if (87 in keys) {  // top
+                p1.move(-1, "y");
+                if(p1.bullet.ready) {
+                    p1.bullet.xSpeed = 0;
+                    p1.bullet.ySpeed = p1.bullet.speed;
+                    p1.bullet.directionSign = -1;
+                }
+                p1.bullet.barrelX = p1.x + 55;
+                p1.bullet.barrelY = p1.y + 35;
             }
-            p1.bullet.barrelX = p1.x + 70;
-            p1.bullet.barrelY = p1.y + 35;
-        } if (65 in keys) {  // left
-            p1.move(-1, "x");
-            if(p1.bullet.ready) {
-                p1.bullet.xSpeed = p1.bullet.speed;
-                p1.bullet.ySpeed = 0;
-                p1.bullet.directionSign = -1;
+            if (70 in keys) {
+                p1.bullet.fire();
             }
-            p1.bullet.barrelX = p1.x + 0;
-            p1.bullet.barrelY = p1.y + 35;
-        } if (83 in keys) {  // bottom
-            p1.move(+1, "y");
-            if(p1.bullet.ready) {
-                p1.bullet.xSpeed = 0;
-                p1.bullet.ySpeed = p1.bullet.speed;
-                p1.bullet.directionSign = +1;
-            }
-            p1.bullet.barrelX = p1.x + 35;
-            p1.bullet.barrelY = p1.y + 50;
-        } if (87 in keys) {  // top
-            p1.move(-1, "y");
-            if(p1.bullet.ready) {
-                p1.bullet.xSpeed = 0;
-                p1.bullet.ySpeed = p1.bullet.speed;
-                p1.bullet.directionSign = -1;
-            }
-            p1.bullet.barrelX = p1.x + 55;
-            p1.bullet.barrelY = p1.y + 35;
-        }
-
-        if (70 in keys) {
-            p1.bullet.fire();
         }
 
         // player2, to detect keys
-        if (39 in keys) {   // right
-            p2.move(+1, 'x');
-            if(p2.bullet.ready) {
-                p2.bullet.xSpeed = p2.bullet.speed;
-                p2.bullet.ySpeed = 0;
-                p2.bullet.directionSign = 1;
-            }
-            p2.bullet.barrelX = p2.x + 70;
-            p2.bullet.barrelY = p2.y + 35;
+        if (p2.live) {
+            if (39 in keys) {   // right
+                p2.move(+1, 'x');
+                if(p2.bullet.ready) {
+                    p2.bullet.xSpeed = p2.bullet.speed;
+                    p2.bullet.ySpeed = 0;
+                    p2.bullet.directionSign = 1;
+                }
+                p2.bullet.barrelX = p2.x + 70;
+                p2.bullet.barrelY = p2.y + 35;
 
-        } if (37 in keys) {  // left
-            p2.move(-1, 'x');
-            if(p2.bullet.ready) {
-                p2.bullet.xSpeed = p2.bullet.speed;
-                p2.bullet.ySpeed = 0;
-                p2.bullet.directionSign = -1;
-            }
-            p2.bullet.barrelX = p2.x + 0;
-            p2.bullet.barrelY = p2.y + 35;
-        } if (40 in keys) { // bottom
-            p2.move(+1, 'y');
-            if(p2.bullet.ready) {
-                p2.bullet.xSpeed = 0;
-                p2.bullet.ySpeed = p2.bullet.speed;
-                p2.bullet.directionSign = +1;
-            }
-            p2.bullet.barrelX = p2.x + 35;
-            p2.bullet.barrelY = p2.y + 50;
+            } if (37 in keys) {  // left
+                p2.move(-1, 'x');
+                if(p2.bullet.ready) {
+                    p2.bullet.xSpeed = p2.bullet.speed;
+                    p2.bullet.ySpeed = 0;
+                    p2.bullet.directionSign = -1;
+                }
+                p2.bullet.barrelX = p2.x + 0;
+                p2.bullet.barrelY = p2.y + 35;
+            } if (40 in keys) { // bottom
+                p2.move(+1, 'y');
+                if(p2.bullet.ready) {
+                    p2.bullet.xSpeed = 0;
+                    p2.bullet.ySpeed = p2.bullet.speed;
+                    p2.bullet.directionSign = +1;
+                }
+                p2.bullet.barrelX = p2.x + 35;
+                p2.bullet.barrelY = p2.y + 50;
 
-        } if (38 in keys) { // top
-            p2.move(-1, 'y');
-            if(p2.bullet.ready) {
-                p2.bullet.xSpeed = 0;
-                p2.bullet.ySpeed = p2.bullet.speed;
-                p2.bullet.directionSign = -1;
+            } if (38 in keys) { // top
+                p2.move(-1, 'y');
+                if(p2.bullet.ready) {
+                    p2.bullet.xSpeed = 0;
+                    p2.bullet.ySpeed = p2.bullet.speed;
+                    p2.bullet.directionSign = -1;
+                }
+                p2.bullet.barrelX = p2.x + 55;
+                p2.bullet.barrelY = p2.y + 35;
             }
-            p2.bullet.barrelX = p2.x + 55;
-            p2.bullet.barrelY = p2.y + 35;
+
+            if (106 in keys) {
+                p2.bullet.fire();
+            }
         }
-
-        if (106 in keys) {
-            p2.bullet.fire();
-        }
-
 
     }
 
