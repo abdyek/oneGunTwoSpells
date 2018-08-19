@@ -136,14 +136,17 @@
     }
 
     Player.prototype.draw = function() {
-        //draw for testing
-        drawRectangle(0,0, 50,50, "#000000");
         // draw head
         drawRectangle(this.x + 20, this.y+5, 40, 35, this.headColor);
         // draw neck
         drawRectangle(this.x + 25, this.y+40, 30, 5, this.headColor);
         // draw body
         drawRectangle(this.x + 5, this.y+45, 70, 60, this.bodyColor);
+        this.drawHealtBar();
+    }
+    Player.prototype.drawHealtBar = function() {
+        var barWidth = (this.hp <= 0) ? 0:(70 * this.hp / 100)
+        drawRectangle(this.x + 5, this.y - 10, barWidth, 7, "#a5ffa0");
     }
 
 
