@@ -1,5 +1,5 @@
 /* 
- * oneGunTwoSpeels
+ * oneGunTwoSpells
  */
  
 (function() {
@@ -39,6 +39,10 @@
         playerImage,
         keys = {};
     
+    colors = {
+        headColor : ['#ffd1ab', '#dfa26f', '#b3723d', '#854917','#522500'],
+        bodyColor : ['#74b9ff', '#a29bfe', '#fd79a8', '#00b894', '#63cdda', '#eccc68', '#7bed9f', '#ff4757'],
+    };
 
     //Get canvas
     canvas = document.getElementById("canvas");
@@ -65,7 +69,7 @@
         this.moving = false;  //for animation (cute feet)
         this.headColor = headColor;
         this.bodyColor = bodyColor;
-        this.live = true;
+        this.live = false;
         this.sprite = sprite({       
             context: context,
             width:480,
@@ -104,7 +108,7 @@
             speed:15,  // default speed
             xSpeed:0,  // this and next line are for bullets moving
             ySpeed:0,
-            damage: 10,
+            damage: 3,
             ready: true,  //it is ready for firing
             directionSign : +1, // --> +1 or -1, if directionSing is +1, bullet will go right.
             barrelX: 0,
@@ -126,6 +130,18 @@
         this.speed = 4;
         this.hp = 100;
 
+        // Cursor on the menu
+        this.cursorX = this.x+5;
+        this.cursorY = this.y-83;
+        this.lineIndex= 0;
+        this.pixelToJump= 16;
+        this.cursorStop = false;
+        this.lines = {
+                headColor: {x: this.x+5, y: this.y-83, pixelToJump: 16, index: 0, lastIndex : colors.headColor.length},
+                bodyColor: {x: this.x+2, y: this.y-53,  pixelToJump: 10, index: 0, lastIndex : colors.bodyColor.length},
+                list: ["headColor", "bodyColor"]
+        };
+        this.currentLine = "headColor";
 
     };
 
@@ -149,16 +165,76 @@
         var barWidth = (this.hp <= 0) ? 0:(70 * this.hp / 100)
         drawRectangle(this.x + 5, this.y - 10, barWidth, 7, "#a5ffa0");
     }
+    Player.prototype.drawMenu = function() {
+        // draw palet
+        var d = 0;     //for only draw colors, I couldn't find appropriate name
+        for (var i = 0; i<colors.headColor.length; i++) {
+            drawRectangle(this.x+d, this.y - 90, 16, 20, colors.headColor[i]);
+            d += 16;
+        }
+        d = 0;
+        for (var i = 0; i<colors.bodyColor.length; i++) {
+            drawRectangle(this.x+d, this.y-60, 10, 20, colors.bodyColor[i]);
+            d += 10;
+        }
+        // draw shadows of cursor
+        for (var i = 0; i<this.lines.list.length; i++) {
+            var line = this.lines[this.lines.list[i]];
+            drawRectangle(line.x + line.pixelToJump * line.index, line.y, 6, 6, "grey");
+        }
+        // draw cursor
+        drawRectangle(this.cursorX, this.cursorY, 6, 6, "black");
+    }
     
     Player.prototype.die = function() {
         this.headColor = "#FF3535";
         this.live = false;
     }
 
+    // this method is for update cursor x-y after changed index by cursorMove and cursorMoveVertical
+    Player.prototype.cursorUpdate = function() {
+        this.cursorX = this.lines[this.currentLine].x+this.lines[this.currentLine].pixelToJump * this.lines[this.currentLine].index;
+        this.cursorY = this.lines[this.currentLine].y;
+    }
+    // move cursor on horizontal
+    Player.prototype.cursorMove = function (sign) {  // sign -1 or +1
+        this.lines[this.currentLine].index += sign;
+        // limit control
+        if(this.lines[this.currentLine].index == -1) {
+            this.lines[this.currentLine].index = this.lines[this.currentLine].lastIndex -1;
+        }
+        if(this.lines[this.currentLine].index == this.lines[this.currentLine].lastIndex) {
+            this.lines[this.currentLine].index = 0;
+        }
+        this.cursorUpdate();
+        this.cursorStop = true;
+        this[this.currentLine] = colors[this.currentLine][this.lines[this.currentLine].index];
+        setTimeout(() => { // to delay pre press
+            this.cursorStop = false;
+        }, 125);
+    }
+    // move cursor on vertical
+    Player.prototype.cursorMoveVertical = function (sign) { // sign -1 or +1
+        this.lineIndex += sign;
+        // limit control
+        if (this.lineIndex == -1) {
+            this.lineIndex = this.lines.list.length -1;
+        }
+        if (this.lineIndex == this.lines.list.length) {
+            this.lineIndex = 0;
+        }
+        this.currentLine = this.lines.list[this.lineIndex];  
+        this.cursorUpdate();
+        this.cursorStop = true;
+
+        setTimeout(()=> { // to delay per press
+            this.cursorStop = false;
+        }, 200);
+    }
 
     // players creating     
-    var p1 = new Player(0,0, "#ffd1ab", "#bae1ff");
-        p2 = new Player(0,0, "#ffd1ab", "#baffc9");
+    var p1 = new Player(20, canvas.height/2-60, colors.headColor[0], colors.bodyColor[0]);
+        p2 = new Player(canvas.width-100, canvas.height/2-60, colors.headColor[0], colors.bodyColor[0]);
 
     
     // the pulse of the player
@@ -411,6 +487,10 @@
             context.drawImage(bulletImage, p2.bullet.x, p2.bullet.y, 10, 10);
         }
 
+        // draw menu per frame
+        p1.drawMenu();
+        p2.drawMenu();
+
         // this line stop animation when release moving keys
         p1.moving = false;  
         p2.moving = false;
@@ -459,6 +539,24 @@
             if (70 in keys) {
                 p1.bullet.fire();
             }
+        } else {
+            if (68 in keys) {  // right
+                if(!p1.cursorStop) {
+                    p1.cursorMove(1);
+                }
+            } if (65 in keys) {  // left
+                if (!p1.cursorStop) {
+                    p1.cursorMove(-1);
+                }
+            } if (83 in keys) {  // bottom
+                if (!p1.cursorStop) {
+                    p1.cursorMoveVertical(+1);
+                }
+            } if (87 in keys) {  // top
+                if(!p1.cursorStop) {
+                    p1.cursorMoveVertical(-1);
+                }
+            }
         }
 
         // player2, to detect keys
@@ -505,6 +603,24 @@
 
             if (106 in keys) {
                 p2.bullet.fire();
+            }
+        } else {
+            if (39 in keys) {   // right
+                if(!p2.cursorStop) {
+                    p2.cursorMove(1);
+                }
+            } if (37 in keys) {  // left
+                if (!p2.cursorStop) {
+                    p2.cursorMove(-1);
+                }
+            } if (40 in keys) { // bottom
+                if(!p2.cursorStop) {
+                    p2.cursorMoveVertical(+1)
+                 }
+            } if (38 in keys) { // top
+                if(!p2.cursorStop) {
+                    p2.cursorMoveVertical(-1);
+                }
             }
         }
 
