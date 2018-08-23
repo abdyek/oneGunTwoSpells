@@ -59,7 +59,8 @@
     bulletImage = new Image();
     bulletImage.src = "images/bullet.png";
     
-
+    readyTicImage = new Image();
+    readyTicImage.src = "images/ready-tic.png";
 
 
     // Player
@@ -115,7 +116,6 @@
             barrelY: 0,
             fire : function () {
                 if(this.ready) {
-                    this.fireOrder = true;
                     this.x = this.barrelX; //this.sprite.x + 50; //the barrel is at  (0,0) because this is only for testing
                     this.y = this.barrelY; //this.sprite.y + 50;
                     this.ready = false;     //it is not ready until it kill
@@ -142,7 +142,8 @@
                 list: ["headColor", "bodyColor"]
         };
         this.currentLine = "headColor";
-
+        this.drawMenuBool = true;
+        this.readyToPlay = false;
     };
 
     // methods
@@ -166,24 +167,29 @@
         drawRectangle(this.x + 5, this.y - 10, barWidth, 7, "#a5ffa0");
     }
     Player.prototype.drawMenu = function() {
-        // draw palet
-        var d = 0;     //for only draw colors, I couldn't find appropriate name
-        for (var i = 0; i<colors.headColor.length; i++) {
-            drawRectangle(this.x+d, this.y - 90, 16, 20, colors.headColor[i]);
-            d += 16;
+        if(this.drawMenuBool) {
+            // draw palet
+            var d = 0;     //for only draw colors, I couldn't find appropriate name
+            for (var i = 0; i<colors.headColor.length; i++) {
+                drawRectangle(this.x+d, this.y - 90, 16, 20, colors.headColor[i]);
+                d += 16;
+            }
+            d = 0;
+            for (var i = 0; i<colors.bodyColor.length; i++) {
+                drawRectangle(this.x+d, this.y-60, 10, 20, colors.bodyColor[i]);
+                d += 10;
+            }
+            // draw shadows of cursor
+            for (var i = 0; i<this.lines.list.length; i++) {
+                var line = this.lines[this.lines.list[i]];
+                drawRectangle(line.x + line.pixelToJump * line.index, line.y, 6, 6, "grey");
+            }
+            // draw cursor
+            drawRectangle(this.cursorX, this.cursorY, 6, 6, "black");
+            if(this.readyToPlay) {
+                context.drawImage(readyTicImage, this.x + 3,this.y + 23);
+            }
         }
-        d = 0;
-        for (var i = 0; i<colors.bodyColor.length; i++) {
-            drawRectangle(this.x+d, this.y-60, 10, 20, colors.bodyColor[i]);
-            d += 10;
-        }
-        // draw shadows of cursor
-        for (var i = 0; i<this.lines.list.length; i++) {
-            var line = this.lines[this.lines.list[i]];
-            drawRectangle(line.x + line.pixelToJump * line.index, line.y, 6, 6, "grey");
-        }
-        // draw cursor
-        drawRectangle(this.cursorX, this.cursorY, 6, 6, "black");
     }
     
     Player.prototype.die = function() {
@@ -198,6 +204,7 @@
     }
     // move cursor on horizontal
     Player.prototype.cursorMove = function (sign) {  // sign -1 or +1
+        this.readyToPlay = false;
         this.lines[this.currentLine].index += sign;
         // limit control
         if(this.lines[this.currentLine].index == -1) {
@@ -215,6 +222,7 @@
     }
     // move cursor on vertical
     Player.prototype.cursorMoveVertical = function (sign) { // sign -1 or +1
+        this.readyToPlay = false;
         this.lineIndex += sign;
         // limit control
         if (this.lineIndex == -1) {
@@ -232,10 +240,24 @@
         }, 200);
     }
 
+    Player.prototype.readyTicDraw = function() {
+        if(this.readyToPlay) {
+            context.drawImage(readyTicImage, 0,0);
+        }
+    }
+
     // players creating     
     var p1 = new Player(20, canvas.height/2-60, colors.headColor[0], colors.bodyColor[0]);
         p2 = new Player(canvas.width-100, canvas.height/2-60, colors.headColor[0], colors.bodyColor[0]);
 
+    // first barrel and bullet values
+    p1.bullet.barrelX = p1.x + 70;
+    p1.bullet.barrelY = p1.y + 35;
+    p1.bullet.xSpeed = 15;
+
+    p2.bullet.barrelX = p2.x + 0;
+    p2.bullet.barrelY = p2.y + 35;
+    p2.bullet.xSpeed = -15;
     
     // the pulse of the player
     var pulseControl = function () {
@@ -243,6 +265,15 @@
             p1.die();
         } else if (p2.hp <= 0) {
             p2.die();
+        }
+    }
+
+    var readyToPlayControl = function () {
+        if((p1.readyToPlay) && p2.readyToPlay) {
+            p1.live = true;
+            p1.drawMenuBool = false;
+            p2.live = true;
+            p2.drawMenuBool = false;
         }
     }
 
@@ -539,7 +570,7 @@
             if (70 in keys) {
                 p1.bullet.fire();
             }
-        } else {
+        } else if(p1.drawMenuBool) {
             if (68 in keys) {  // right
                 if(!p1.cursorStop) {
                     p1.cursorMove(1);
@@ -556,6 +587,9 @@
                 if(!p1.cursorStop) {
                     p1.cursorMoveVertical(-1);
                 }
+            } if (70 in keys) {
+                p1.readyToPlay = true;
+                readyToPlayControl();
             }
         }
 
@@ -570,7 +604,6 @@
                 }
                 p2.bullet.barrelX = p2.x + 70;
                 p2.bullet.barrelY = p2.y + 35;
-
             } if (37 in keys) {  // left
                 p2.move(-1, 'x');
                 if(p2.bullet.ready) {
@@ -604,7 +637,7 @@
             if (106 in keys) {
                 p2.bullet.fire();
             }
-        } else {
+        } else if (p2.drawMenuBool) {
             if (39 in keys) {   // right
                 if(!p2.cursorStop) {
                     p2.cursorMove(1);
@@ -621,6 +654,9 @@
                 if(!p2.cursorStop) {
                     p2.cursorMoveVertical(-1);
                 }
+            } if (106 in keys) {
+                p2.readyToPlay = true;
+                readyToPlayControl();
             }
         }
 
