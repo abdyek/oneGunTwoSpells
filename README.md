@@ -17,4 +17,4 @@ player2
 Arrow Keys are control to move.
 fire --> *
 
-Play now! [abdyek.github.io/oneGunTwoSpells](https://abdyek.github.io/oneGunTwoSpells)
+Play now! [abdyek.github.io/oneGunTwoSpells](https://abdyek.github.io/oneGunTwoSpells/oneGunTwoSpells)
