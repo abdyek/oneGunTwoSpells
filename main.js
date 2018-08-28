@@ -104,6 +104,13 @@
          *
         */
         this.bullet = {
+            // temporary x, y, xSpeed, ySpeed, directionSign --> those are for drawing
+            tx : 0,
+            ty : 0,
+            txSpeed : 0,
+            tySpeed : 0,
+            tDirectionSign: +1,
+            //default x, y, speed
             x:0,
             y:0,
             speed:15,  // default speed
@@ -116,8 +123,11 @@
             barrelY: 0,
             fire : function () {
                 if(this.ready) {
-                    this.x = this.barrelX; //this.sprite.x + 50; //the barrel is at  (0,0) because this is only for testing
-                    this.y = this.barrelY; //this.sprite.y + 50;
+                    this.tx = this.barrelX; //this.sprite.x + 50; //the barrel is at  (0,0) because this is only for testing
+                    this.ty = this.barrelY; //this.sprite.y + 50;
+                    this.txSpeed = this.xSpeed;
+                    this.tySpeed = this.ySpeed;
+                    this.tDirectionSign = this.directionSign;
                     this.ready = false;     //it is not ready until it kill
                 }
             },
@@ -435,23 +445,23 @@
 
 
         // bullets can live inside canvas
-        if((p1.bullet.x > canvas.width) ||
-            (p1.bullet.x < 0) ||
-            (p1.bullet.y > canvas.height) ||
-            (p1.bullet.y < 0)){ 
+        if((p1.bullet.tx > canvas.width) ||
+            (p1.bullet.tx < 0) ||
+            (p1.bullet.ty > canvas.height) ||
+            (p1.bullet.ty < 0)){ 
                 p1.bullet.kill();
         }
-        if((p2.bullet.x > canvas.width) ||
-            (p2.bullet.x < 0) ||
-            (p2.bullet.y > canvas.height) ||
-            (p2.bullet.y < 0)){ 
+        if((p2.bullet.tx > canvas.width) ||
+            (p2.bullet.tx < 0) ||
+            (p2.bullet.ty > canvas.height) ||
+            (p2.bullet.ty < 0)){ 
                 p2.bullet.kill();
         }
 
         // did bullets arrive the rival of its owner?
-        if((!p1.bullet.ready) &&(p1.bullet.x > p2.sprite.x)&&(p1.bullet.x < p2.sprite.x + 100)) {
-            if((p1.bullet.y > p2.sprite.y) &&(p1.bullet.y < p2.sprite.y + 100)) {
-                way = p1.bullet.y;
+        if((!p1.bullet.ready) &&(p1.bullet.tx > p2.sprite.x)&&(p1.bullet.tx < p2.sprite.x + 100)) {
+            if((p1.bullet.ty > p2.sprite.y) &&(p1.bullet.ty < p2.sprite.y + 100)) {
+                way = p1.bullet.ty;
                 try {   //this is bad code, I will delete these
                     min = targetDict[(way - p2.sprite.y)][0];
                     max = targetDict[(way - p2.sprite.y)][1];
@@ -459,7 +469,7 @@
                     console.log("caught");
                 }
 
-                if((p1.bullet.x > p2.sprite.x + min) &&(p1.bullet.x < p2.sprite.x + max)) {
+                if((p1.bullet.tx > p2.sprite.x + min) &&(p1.bullet.tx < p2.sprite.x + max)) {
                     p2.hp -= p1.bullet.damage;
                     p1.bullet.kill();
                     pulseControl();
@@ -467,16 +477,16 @@
             };
         };
 
-        if((!p2.bullet.ready) &&(p2.bullet.x > p1.sprite.x)&&(p2.bullet.x < p1.sprite.x + 100)) {
-            if((p2.bullet.y > p1.sprite.y) &&(p2.bullet.y < p1.sprite.y + 100)) {
-                way = p2.bullet.y;
+        if((!p2.bullet.ready) &&(p2.bullet.tx > p1.sprite.x)&&(p2.bullet.tx < p1.sprite.x + 100)) {
+            if((p2.bullet.ty > p1.sprite.y) &&(p2.bullet.ty < p1.sprite.y + 100)) {
+                way = p2.bullet.ty;
                 try  {
                     min = targetDict[(way - p1.sprite.y)][0];
                     max = targetDict[(way - p1.sprite.y)][1];
                 } catch {
                 }
 
-                if((p2.bullet.x > p1.sprite.x + min) &&(p2.bullet.x < p1.sprite.x + max)) {
+                if((p2.bullet.tx > p1.sprite.x + min) &&(p2.bullet.tx < p1.sprite.x + max)) {
                     p1.hp -= p2.bullet.damage;
                     p2.bullet.kill();
                     pulseControl();
@@ -508,14 +518,14 @@
 
         //draw bullets
         if(!p1.bullet.ready){   //the bullet going
-            p1.bullet.x += p1.bullet.directionSign * p1.bullet.xSpeed;
-            p1.bullet.y += p1.bullet.directionSign * p1.bullet.ySpeed;
-            context.drawImage(bulletImage, p1.bullet.x, p1.bullet.y, 10, 10);
+            p1.bullet.tx += p1.bullet.tDirectionSign * p1.bullet.txSpeed;
+            p1.bullet.ty += p1.bullet.tDirectionSign * p1.bullet.tySpeed;
+            context.drawImage(bulletImage, p1.bullet.tx, p1.bullet.ty, 10, 10);
         }
         if(!p2.bullet.ready){
-            p2.bullet.x += p2.bullet.directionSign * p2.bullet.xSpeed;
-            p2.bullet.y += p2.bullet.directionSign * p2.bullet.ySpeed;
-            context.drawImage(bulletImage, p2.bullet.x, p2.bullet.y, 10, 10);
+            p2.bullet.tx += p2.bullet.tDirectionSign * p2.bullet.txSpeed;
+            p2.bullet.ty += p2.bullet.tDirectionSign * p2.bullet.tySpeed;
+            context.drawImage(bulletImage, p2.bullet.tx, p2.bullet.ty, 10, 10);
         }
 
         // draw menu per frame
@@ -532,38 +542,30 @@
         if(p1.live) {
             if (68 in keys) {  // right
                 p1.move(+1, "x");
-                if(p1.bullet.ready) {
-                    p1.bullet.xSpeed = p1.bullet.speed;
-                    p1.bullet.ySpeed = 0;
-                    p1.bullet.directionSign = 1;
-                }
+                p1.bullet.xSpeed = p1.bullet.speed;
+                p1.bullet.ySpeed = 0;
+                p1.bullet.directionSign = 1;
                 p1.bullet.barrelX = p1.x + 70;
                 p1.bullet.barrelY = p1.y + 35;
             } if (65 in keys) {  // left
                 p1.move(-1, "x");
-                if(p1.bullet.ready) {
-                    p1.bullet.xSpeed = p1.bullet.speed;
-                    p1.bullet.ySpeed = 0;
-                    p1.bullet.directionSign = -1;
-                }
+                p1.bullet.xSpeed = p1.bullet.speed;
+                p1.bullet.ySpeed = 0;
+                p1.bullet.directionSign = -1;
                 p1.bullet.barrelX = p1.x + 0;
                 p1.bullet.barrelY = p1.y + 35;
             } if (83 in keys) {  // bottom
                 p1.move(+1, "y");
-                if(p1.bullet.ready) {
-                    p1.bullet.xSpeed = 0;
-                    p1.bullet.ySpeed = p1.bullet.speed;
-                    p1.bullet.directionSign = +1;
-                }
+                p1.bullet.xSpeed = 0;
+                p1.bullet.ySpeed = p1.bullet.speed;
+                p1.bullet.directionSign = +1;
                 p1.bullet.barrelX = p1.x + 35;
                 p1.bullet.barrelY = p1.y + 50;
             } if (87 in keys) {  // top
                 p1.move(-1, "y");
-                if(p1.bullet.ready) {
-                    p1.bullet.xSpeed = 0;
-                    p1.bullet.ySpeed = p1.bullet.speed;
-                    p1.bullet.directionSign = -1;
-                }
+                p1.bullet.xSpeed = 0;
+                p1.bullet.ySpeed = p1.bullet.speed;
+                p1.bullet.directionSign = -1;
                 p1.bullet.barrelX = p1.x + 55;
                 p1.bullet.barrelY = p1.y + 35;
             }
@@ -597,39 +599,31 @@
         if (p2.live) {
             if (39 in keys) {   // right
                 p2.move(+1, 'x');
-                if(p2.bullet.ready) {
-                    p2.bullet.xSpeed = p2.bullet.speed;
-                    p2.bullet.ySpeed = 0;
-                    p2.bullet.directionSign = 1;
-                }
+                p2.bullet.xSpeed = p2.bullet.speed;
+                p2.bullet.ySpeed = 0;
+                p2.bullet.directionSign = 1;
                 p2.bullet.barrelX = p2.x + 70;
                 p2.bullet.barrelY = p2.y + 35;
             } if (37 in keys) {  // left
                 p2.move(-1, 'x');
-                if(p2.bullet.ready) {
-                    p2.bullet.xSpeed = p2.bullet.speed;
-                    p2.bullet.ySpeed = 0;
-                    p2.bullet.directionSign = -1;
-                }
+                p2.bullet.xSpeed = p2.bullet.speed;
+                p2.bullet.ySpeed = 0;
+                p2.bullet.directionSign = -1;
                 p2.bullet.barrelX = p2.x + 0;
                 p2.bullet.barrelY = p2.y + 35;
             } if (40 in keys) { // bottom
                 p2.move(+1, 'y');
-                if(p2.bullet.ready) {
-                    p2.bullet.xSpeed = 0;
-                    p2.bullet.ySpeed = p2.bullet.speed;
-                    p2.bullet.directionSign = +1;
-                }
+                p2.bullet.xSpeed = 0;
+                p2.bullet.ySpeed = p2.bullet.speed;
+                p2.bullet.directionSign = +1;
                 p2.bullet.barrelX = p2.x + 35;
                 p2.bullet.barrelY = p2.y + 50;
 
             } if (38 in keys) { // top
                 p2.move(-1, 'y');
-                if(p2.bullet.ready) {
-                    p2.bullet.xSpeed = 0;
-                    p2.bullet.ySpeed = p2.bullet.speed;
-                    p2.bullet.directionSign = -1;
-                }
+                p2.bullet.xSpeed = 0;
+                p2.bullet.ySpeed = p2.bullet.speed;
+                p2.bullet.directionSign = -1;
                 p2.bullet.barrelX = p2.x + 55;
                 p2.bullet.barrelY = p2.y + 35;
             }
