@@ -55,9 +55,6 @@
 
     playerImage = new Image();
     playerImage.src = "images/feet.png";
-
-    bulletImage = new Image();
-    bulletImage.src = "images/bullet.png";
     
     readyTicImage = new Image();
     readyTicImage.src = "images/ready-tic.png";
@@ -263,11 +260,11 @@
     // first barrel and bullet values
     p1.bullet.barrelX = p1.x + 70;
     p1.bullet.barrelY = p1.y + 35;
-    p1.bullet.xSpeed = 15;
+    p1.bullet.xSpeed = p1.bullet.speed;
 
     p2.bullet.barrelX = p2.x + 0;
     p2.bullet.barrelY = p2.y + 35;
-    p2.bullet.xSpeed = -15;
+    p2.bullet.xSpeed = -1 * p2.bullet.speed;
     
     // the pulse of the player
     var pulseControl = function () {
@@ -299,125 +296,125 @@
      *   I mentioned it "testing" because I try it
      */ 
     
-        var targetDict = {
-            5: [10, 60],
-            6: [10, 60],
-            7: [10, 60],
-            8: [10, 60],
-            9: [10, 60],
-            10: [10, 60],
-            11: [10, 60],
-            12: [10, 60],
-            13: [10, 60],
-            14: [10, 60],
-            15: [10, 60],
-            16: [10, 60],
-            17: [10, 60],
-            18: [10, 60],
-            19: [10, 60],
-            20: [10, 60],
-            21: [10, 60],
-            22: [10, 60],
-            23: [10, 60],
-            24: [10, 60],
-            25: [10, 60],
-            26: [10, 60],
-            27: [10, 60],
-            28: [10, 60],
-            29: [10, 60],
-            30: [10, 60],
-            31: [10, 60],
-            32: [10, 60],
-            33: [10, 60],
-            34: [10, 60],
-            35: [10, 60],
-            36: [10, 60],
-            37: [10, 60],
-            38: [10, 60],
-            39: [10, 60],
-            40: [10, 60],
-            41: [15, 55],
-            42: [15, 55],
-            43: [15, 55],
-            44: [15, 55],
-            45: [0, 75],
-            46: [0, 75],
-            47: [0, 75],
-            48: [0, 75],
-            49: [0, 75],
-            50: [0, 75],
-            51: [0, 75],
-            52: [0, 75],
-            53: [0, 75],
-            54: [0, 75],
-            55: [0, 75],
-            56: [0, 75],
-            57: [0, 75],
-            58: [0, 75],
-            59: [0, 75],
-            60: [0, 75],
-            61: [0, 75],
-            62: [0, 75],
-            63: [0, 75],
-            64: [0, 75],
-            65: [0, 75],
-            66: [0, 75],
-            67: [0, 75],
-            68: [0, 75],
-            69: [0, 75],
-            70: [0, 75],
-            71: [0, 75],
-            72: [0, 75],
-            73: [0, 75],
-            74: [0, 75],
-            75: [0, 75],
-            76: [0, 75],
-            77: [0, 75],
-            78: [0, 75],
-            79: [0, 75],
-            80: [0, 75],
-            81: [0, 75],
-            82: [0, 75],
-            83: [0, 75],
-            84: [0, 75],
-            85: [0, 75],
-            86: [0, 75],
-            87: [0, 75],
-            88: [0, 75],
-            89: [0, 75],
-            90: [0, 75],
-            91: [0, 75],
-            92: [0, 75],
-            93: [0, 75],
-            94: [0, 75],
-            95: [0, 75],
-            96: [0, 75],
-            97: [0, 75],
-            98: [0, 75],
-            99: [0, 75],
-            100: [0, 75],
-            101: [0, 75],
-            102: [0, 75],
-            103: [0, 75],
-            104: [0, 75],
-            105: [0, 75],
-            106: [15, 55],
-            107: [15, 55],
-            108: [15, 55],
-            109: [15, 55],
-            110: [15, 55],
-            111: [15, 55],
-            112: [15, 55],
-            113: [15, 55],
-            114: [15, 55],
-            115: [15, 55]
+        var playerHitBox = {
+            0: [50,30],
+            5: [20, 60],
+            6: [20, 60],
+            7: [20, 60],
+            8: [20, 60],
+            9: [20, 60],
+            10: [20, 60],
+            11: [20, 60],
+            12: [20, 60],
+            13: [20, 60],
+            14: [20, 60],
+            15: [20, 60],
+            16: [20, 60],
+            17: [20, 60],
+            18: [20, 60],
+            19: [20, 60],
+            20: [20, 60],
+            21: [20, 60],
+            22: [20, 60],
+            23: [20, 60],
+            24: [20, 60],
+            25: [20, 60],
+            26: [20, 60],
+            27: [20, 60],
+            28: [20, 60],
+            29: [20, 60],
+            30: [20, 60],
+            31: [20, 60],
+            32: [20, 60],
+            33: [20, 60],
+            34: [20, 60],
+            35: [20, 60],
+            36: [20, 60],
+            37: [20, 60],
+            38: [20, 60],
+            39: [20, 60],
+            40: [20, 60],
+            41: [25, 55],
+            42: [25, 55],
+            43: [25, 55],
+            44: [25, 55],
+            45: [5, 75],
+            46: [5, 75],
+            47: [5, 75],
+            48: [5, 75],
+            49: [5, 75],
+            50: [5, 75],
+            51: [5, 75],
+            52: [5, 75],
+            53: [5, 75],
+            54: [5, 75],
+            55: [5, 75],
+            56: [5, 75],
+            57: [5, 75],
+            58: [5, 75],
+            59: [5, 75],
+            60: [5, 75],
+            61: [5, 75],
+            62: [5, 75],
+            63: [5, 75],
+            64: [5, 75],
+            65: [5, 75],
+            66: [5, 75],
+            67: [5, 75],
+            68: [5, 75],
+            69: [5, 75],
+            70: [5, 75],
+            71: [5, 75],
+            72: [5, 75],
+            73: [5, 75],
+            74: [5, 75],
+            75: [5, 75],
+            76: [5, 75],
+            77: [5, 75],
+            78: [5, 75],
+            79: [5, 75],
+            80: [5, 75],
+            81: [5, 75],
+            82: [5, 75],
+            83: [5, 75],
+            84: [5, 75],
+            85: [5, 75],
+            86: [5, 75],
+            87: [5, 75],
+            88: [5, 75],
+            89: [5, 75],
+            90: [5, 75],
+            91: [5, 75],
+            92: [5, 75],
+            93: [5, 75],
+            94: [5, 75],
+            95: [5, 75],
+            96: [5, 75],
+            97: [5, 75],
+            98: [5, 75],
+            99: [5, 75],
+            100: [5, 75],
+            101: [5, 75],
+            102: [5, 75],
+            103: [5, 75],
+            104: [5, 75],
+            105: [5, 75],
+            106: [25, 55],
+            107: [25, 55],
+            108: [25, 55],
+            109: [25, 55],
+            110: [25, 55],
+            111: [25, 55],
+            112: [25, 55],
+            113: [25, 55],
+            114: [25, 55],
+            115: [25, 55]
         }
 
-    var way, min, max;
 
     // ^ testing
     
-
+    // draw tools
     var drawRectangle = function (x, y, width, height, color) {
         context.beginPath();
         context.moveTo(x, y+(height/2));
@@ -426,6 +423,51 @@
         context.strokeStyle = color;
         context.stroke();
     }
+    var drawCircle = function (x,y, radius, color) {
+        context.beginPath();
+        context.arc(x+radius,y+radius,radius, 0, 2 * Math.PI, false); 
+        context.fillStyle = color;
+        context.fill();
+    }
+    
+    var isItOnTheLine= function(itsStart, itsFinish, lineStart, lineFinish) {
+        if((itsFinish > lineStart) && (itsStart < lineFinish)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    var attackControl = function(off, def) {  // off - offensive player , def - defensive player
+        // did bullets arrive the rival of its owner?
+        // 7 is width and height of bullets
+        // I have planned it that bullets like point but now I have changed bullets like square. So I have defined new variables.
+        var route, topLineStart, topLineFinish, botLineStart, botLineFinish, topIndex, botIndex;
+        if((!off.bullet.ready) && isItOnTheLine(off.bullet.tx, off.bullet.tx+7, def.sprite.x, def.sprite.x + 80)) {
+            if(isItOnTheLine(off.bullet.ty, off.bullet.ty+7, def.sprite.y, def.sprite.y + 110)) {
+                route = off.bullet.ty;
+                topIndex = route - def.sprite.y;
+                topindex = (topIndex>4)? topIndex: 0;
+                botIndex = route - def.sprite.y + 7;
+                botIndex = (botIndex>4)? botIndex: 0;
+                try {   //this is bad code, I will delete try-catch some day!
+                    topLineStart = playerHitBox [topIndex][0];
+                    topLineFinish = playerHitBox [topIndex][1];
+                    botLineStart = playerHitBox [botIndex][0];
+                    botLineFinish = playerHitBox [botIndex][1];
+                } catch {
+                }
+                if(isItOnTheLine(off.bullet.tx, off.bullet.tx+7, def.sprite.x + topLineStart, def.sprite.x+topLineFinish) ||
+                    isItOnTheLine(off.bullet.tx, off.bullet.tx+7, def.sprite.x + botLineStart, def.sprite.x+botLineFinish)
+                ) {
+                    def.hp -= off.bullet.damage;
+                    off.bullet.kill();
+                    pulseControl();
+                }
+            }
+        }
+    }
+
 
     function gameLoop() {
 
@@ -458,49 +500,28 @@
                 p2.bullet.kill();
         }
 
-        // did bullets arrive the rival of its owner?
-        if((!p1.bullet.ready) &&(p1.bullet.tx > p2.sprite.x)&&(p1.bullet.tx < p2.sprite.x + 100)) {
-            if((p1.bullet.ty > p2.sprite.y) &&(p1.bullet.ty < p2.sprite.y + 100)) {
-                way = p1.bullet.ty;
-                try {   //this is bad code, I will delete these
-                    min = targetDict[(way - p2.sprite.y)][0];
-                    max = targetDict[(way - p2.sprite.y)][1];
-                } catch {
-                    console.log("caught");
-                }
 
-                if((p1.bullet.tx > p2.sprite.x + min) &&(p1.bullet.tx < p2.sprite.x + max)) {
-                    p2.hp -= p1.bullet.damage;
-                    p1.bullet.kill();
-                    pulseControl();
-                }
-            };
-        };
+        attackControl(p1,p2);
+        attackControl(p2,p1);
 
-        if((!p2.bullet.ready) &&(p2.bullet.tx > p1.sprite.x)&&(p2.bullet.tx < p1.sprite.x + 100)) {
-            if((p2.bullet.ty > p1.sprite.y) &&(p2.bullet.ty < p1.sprite.y + 100)) {
-                way = p2.bullet.ty;
-                try  {
-                    min = targetDict[(way - p1.sprite.y)][0];
-                    max = targetDict[(way - p1.sprite.y)][1];
-                } catch {
-                }
-
-                if((p2.bullet.tx > p1.sprite.x + min) &&(p2.bullet.tx < p1.sprite.x + max)) {
-                    p1.hp -= p2.bullet.damage;
-                    p2.bullet.kill();
-                    pulseControl();
-                }
-            };
-        };
-
-        
         
 
         
         //clear the canvas
         context.clearRect(0,0,canvas.width, canvas.height);
-        
+
+        //draw bullets
+        if(!p1.bullet.ready){   //the bullet going
+            p1.bullet.tx += p1.bullet.tDirectionSign * p1.bullet.txSpeed;
+            p1.bullet.ty += p1.bullet.tDirectionSign * p1.bullet.tySpeed;
+            drawCircle(p1.bullet.tx, p1.bullet.ty, 3.5, "black");
+        }
+        if(!p2.bullet.ready){
+            p2.bullet.tx += p2.bullet.tDirectionSign * p2.bullet.txSpeed;
+            p2.bullet.ty += p2.bullet.tDirectionSign * p2.bullet.tySpeed;
+            drawCircle(p2.bullet.tx, p2.bullet.ty, 3.5, "black");
+        }
+
         //control for animation
         if(p1.moving) {                 
             p1.sprite.update();
@@ -516,17 +537,6 @@
         p2.sprite.render();
         p2.draw();
 
-        //draw bullets
-        if(!p1.bullet.ready){   //the bullet going
-            p1.bullet.tx += p1.bullet.tDirectionSign * p1.bullet.txSpeed;
-            p1.bullet.ty += p1.bullet.tDirectionSign * p1.bullet.tySpeed;
-            context.drawImage(bulletImage, p1.bullet.tx, p1.bullet.ty, 10, 10);
-        }
-        if(!p2.bullet.ready){
-            p2.bullet.tx += p2.bullet.tDirectionSign * p2.bullet.txSpeed;
-            p2.bullet.ty += p2.bullet.tDirectionSign * p2.bullet.tySpeed;
-            context.drawImage(bulletImage, p2.bullet.tx, p2.bullet.ty, 10, 10);
-        }
 
         // draw menu per frame
         p1.drawMenu();
