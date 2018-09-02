@@ -37,7 +37,7 @@
     var canvas,
         context,
         playerImage,
-        keys = {};
+        keys = {};     // pressed keys are in this object
     
     colors = {
         headColor : ['#ffd1ab', '#dfa26f', '#b3723d', '#854917','#522500'],
@@ -79,58 +79,34 @@
             y : this.y
         }) 
 
-
-        /*          //this block have a spoiler
-        this.bulletLen = 5;
-        this.bullets = new Array();
-        this.bulletIndex = -1;
-        for (var i=0; i<this.bulletLen; i++) {
-            this.bullets[i] = {
-                index:i,
-                fire: false,
+        this.barrelX = 0;
+        this.barrelY = 0;
+        this.damage = 3;
+        this.bx=0;
+        this.by=0;
+        this.bSpeed=15;  // default speed
+        this.bxSpeed=0;  // this and next line are for bullets moving
+        this.bySpeed=0;
+        this.bDirectionSign = +1; // --> +1 or -1, if directionSing is +1, bullet will go right.
+        this.bIndex = -1;
+        
+        this.barrelCooldownTime = 250;
+        this.barrelReady = false;
+        this.capacityOfMagazine = 10;
+        this.bullet = new Array();
+        for (var i =0; i<this.capacityOfMagazine; i++) {
+            this.bullet[i] = {
+                // temporary x, y, xSpeed, ySpeed, directionSign --> those are for drawing
                 x : 0,
                 y : 0,
+                xSpeed : 0,
+                ySpeed : 0,
+                directionSign: +1,
+                ready: true,  //it is ready for firing
                 kill : function() {
-                    this.fire = true;
-                },
-                image: "image will come here"
-            }
-        };
-         *
-         * multiple bullet not now
-         *
-        */
-        this.bullet = {
-            // temporary x, y, xSpeed, ySpeed, directionSign --> those are for drawing
-            tx : 0,
-            ty : 0,
-            txSpeed : 0,
-            tySpeed : 0,
-            tDirectionSign: +1,
-            //default x, y, speed
-            x:0,
-            y:0,
-            speed:15,  // default speed
-            xSpeed:0,  // this and next line are for bullets moving
-            ySpeed:0,
-            damage: 3,
-            ready: true,  //it is ready for firing
-            directionSign : +1, // --> +1 or -1, if directionSing is +1, bullet will go right.
-            barrelX: 0,
-            barrelY: 0,
-            fire : function () {
-                if(this.ready) {
-                    this.tx = this.barrelX; //this.sprite.x + 50; //the barrel is at  (0,0) because this is only for testing
-                    this.ty = this.barrelY; //this.sprite.y + 50;
-                    this.txSpeed = this.xSpeed;
-                    this.tySpeed = this.ySpeed;
-                    this.tDirectionSign = this.directionSign;
-                    this.ready = false;     //it is not ready until it kill
+                    this.ready = true;
                 }
-            },
-            kill : function() {
-                this.ready = true;
-            },
+            }
         }
         
         //Default ability
@@ -154,10 +130,33 @@
     };
 
     // methods
-    Player.prototype.move = function(sign, xOrY) {
+    Player.prototype.move = function(sign, xOrY, bxSpeed, bySpeed, bDirectionSign, barrelX, barrelY) {
         this[xOrY] += sign * this.speed;
         this.sprite[xOrY] = this[xOrY];
         this.moving = true;     // for animation
+        
+        this.bxSpeed = bxSpeed;
+        this.bySpeed = bySpeed;
+        this.bDirectionSign = bDirectionSign;
+        this.barrelX = barrelX;
+        this.barrelY = barrelY;
+    }
+    
+    Player.prototype.fire = function() {
+        if((this.barrelReady) && (this.bullet[0].ready)) {
+            this.barrelReady = false;
+            this.bIndex = (this.bIndex+1 == this.capacityOfMagazine) ? 0 : this.bIndex + 1 ;
+            this.bullet[this.bIndex].x = this.barrelX;
+            this.bullet[this.bIndex].y = this.barrelY;
+            this.bullet[this.bIndex].xSpeed = this.bxSpeed;
+            this.bullet[this.bIndex].ySpeed = this.bySpeed;
+            this.bullet[this.bIndex].directionSign = this.bDirectionSign;
+            this.bullet[this.bIndex].ready = false;
+
+            setTimeout(()=> { // to delay per press
+                this.barrelReady = true;
+            }, this.barrelCooldownTime);
+        }
     }
 
     Player.prototype.draw = function() {
@@ -258,13 +257,13 @@
         p2 = new Player(canvas.width-100, canvas.height/2-60, colors.headColor[0], colors.bodyColor[0]);
 
     // first barrel and bullet values
-    p1.bullet.barrelX = p1.x + 70;
-    p1.bullet.barrelY = p1.y + 35;
-    p1.bullet.xSpeed = p1.bullet.speed;
+    p1.barrelX = p1.x + 70;
+    p1.barrelY = p1.y + 35;
+    p1.bullet[0].xSpeed = p1.bullet[0].speed;
 
-    p2.bullet.barrelX = p2.x + 0;
-    p2.bullet.barrelY = p2.y + 35;
-    p2.bullet.xSpeed = -1 * p2.bullet.speed;
+    p2.barrelX = p2.x + 0;
+    p2.barrelY = p2.y + 35;
+    p2.bullet[0].xSpeed = -1 * p2.bullet[0].speed;
     
     // the pulse of the player
     var pulseControl = function () {
@@ -276,11 +275,15 @@
     }
 
     var readyToPlayControl = function () {
-        if((p1.readyToPlay) && p2.readyToPlay) {
-            p1.live = true;
-            p1.drawMenuBool = false;
-            p2.live = true;
-            p2.drawMenuBool = false;
+        if(p1.readyToPlay && p2.readyToPlay) {
+            setTimeout(function() {
+                p1.live = true;
+                p1.drawMenuBool = false;
+                p2.live = true;
+                p2.drawMenuBool = false;
+                p1.barrelReady = true;
+                p2.barrelReady = true;
+            },  100);
         }
     }
 
@@ -296,119 +299,7 @@
      *   I mentioned it "testing" because I try it
      */ 
     
-        var playerHitBox = {
-            0: [50,30],
-            5: [20, 60],
-            6: [20, 60],
-            7: [20, 60],
-            8: [20, 60],
-            9: [20, 60],
-            10: [20, 60],
-            11: [20, 60],
-            12: [20, 60],
-            13: [20, 60],
-            14: [20, 60],
-            15: [20, 60],
-            16: [20, 60],
-            17: [20, 60],
-            18: [20, 60],
-            19: [20, 60],
-            20: [20, 60],
-            21: [20, 60],
-            22: [20, 60],
-            23: [20, 60],
-            24: [20, 60],
-            25: [20, 60],
-            26: [20, 60],
-            27: [20, 60],
-            28: [20, 60],
-            29: [20, 60],
-            30: [20, 60],
-            31: [20, 60],
-            32: [20, 60],
-            33: [20, 60],
-            34: [20, 60],
-            35: [20, 60],
-            36: [20, 60],
-            37: [20, 60],
-            38: [20, 60],
-            39: [20, 60],
-            40: [20, 60],
-            41: [25, 55],
-            42: [25, 55],
-            43: [25, 55],
-            44: [25, 55],
-            45: [5, 75],
-            46: [5, 75],
-            47: [5, 75],
-            48: [5, 75],
-            49: [5, 75],
-            50: [5, 75],
-            51: [5, 75],
-            52: [5, 75],
-            53: [5, 75],
-            54: [5, 75],
-            55: [5, 75],
-            56: [5, 75],
-            57: [5, 75],
-            58: [5, 75],
-            59: [5, 75],
-            60: [5, 75],
-            61: [5, 75],
-            62: [5, 75],
-            63: [5, 75],
-            64: [5, 75],
-            65: [5, 75],
-            66: [5, 75],
-            67: [5, 75],
-            68: [5, 75],
-            69: [5, 75],
-            70: [5, 75],
-            71: [5, 75],
-            72: [5, 75],
-            73: [5, 75],
-            74: [5, 75],
-            75: [5, 75],
-            76: [5, 75],
-            77: [5, 75],
-            78: [5, 75],
-            79: [5, 75],
-            80: [5, 75],
-            81: [5, 75],
-            82: [5, 75],
-            83: [5, 75],
-            84: [5, 75],
-            85: [5, 75],
-            86: [5, 75],
-            87: [5, 75],
-            88: [5, 75],
-            89: [5, 75],
-            90: [5, 75],
-            91: [5, 75],
-            92: [5, 75],
-            93: [5, 75],
-            94: [5, 75],
-            95: [5, 75],
-            96: [5, 75],
-            97: [5, 75],
-            98: [5, 75],
-            99: [5, 75],
-            100: [5, 75],
-            101: [5, 75],
-            102: [5, 75],
-            103: [5, 75],
-            104: [5, 75],
-            105: [5, 75],
-            106: [25, 55],
-            107: [25, 55],
-            108: [25, 55],
-            109: [25, 55],
-            110: [25, 55],
-            111: [25, 55],
-            112: [25, 55],
-            113: [25, 55],
-            114: [25, 55],
-            115: [25, 55]
+        var playerHitBox = { 0: [50,30], 5: [20, 60], 6: [20, 60], 7: [20, 60], 8: [20, 60], 9: [20, 60], 10: [20, 60], 11: [20, 60], 12: [20, 60], 13: [20, 60], 14: [20, 60], 15: [20, 60], 16: [20, 60], 17: [20, 60], 18: [20, 60], 19: [20, 60], 20: [20, 60], 21: [20, 60], 22: [20, 60], 23: [20, 60], 24: [20, 60], 25: [20, 60], 26: [20, 60], 27: [20, 60], 28: [20, 60], 29: [20, 60], 30: [20, 60], 31: [20, 60], 32: [20, 60], 33: [20, 60], 34: [20, 60], 35: [20, 60], 36: [20, 60], 37: [20, 60], 38: [20, 60], 39: [20, 60], 40: [20, 60], 41: [25, 55], 42: [25, 55], 43: [25, 55], 44: [25, 55], 45: [5, 75], 46: [5, 75], 47: [5, 75], 48: [5, 75], 49: [5, 75], 50: [5, 75], 51: [5, 75], 52: [5, 75], 53: [5, 75], 54: [5, 75], 55: [5, 75], 56: [5, 75], 57: [5, 75], 58: [5, 75], 59: [5, 75], 60: [5, 75], 61: [5, 75], 62: [5, 75], 63: [5, 75], 64: [5, 75], 65: [5, 75], 66: [5, 75], 67: [5, 75], 68: [5, 75], 69: [5, 75], 70: [5, 75], 71: [5, 75], 72: [5, 75], 73: [5, 75], 74: [5, 75], 75: [5, 75], 76: [5, 75], 77: [5, 75], 78: [5, 75], 79: [5, 75], 80: [5, 75], 81: [5, 75], 82: [5, 75], 83: [5, 75], 84: [5, 75], 85: [5, 75], 86: [5, 75], 87: [5, 75], 88: [5, 75], 89: [5, 75], 90: [5, 75], 91: [5, 75], 92: [5, 75], 93: [5, 75], 94: [5, 75], 95: [5, 75], 96: [5, 75], 97: [5, 75], 98: [5, 75], 99: [5, 75], 100: [5, 75], 101: [5, 75], 102: [5, 75], 103: [5, 75], 104: [5, 75], 105: [5, 75], 106: [25, 55], 107: [25, 55], 108: [25, 55], 109: [25, 55], 110: [25, 55], 111: [25, 55], 112: [25, 55], 113: [25, 55], 114: [25, 55], 115: [25, 55]
         }
 
 
@@ -438,14 +329,14 @@
         }
     }
 
-    var attackControl = function(off, def) {  // off - offensive player , def - defensive player
+    var attackControl = function(off, def, index) {  // off - offensive player , def - defensive player
         // did bullets arrive the rival of its owner?
         // 7 is width and height of bullets
         // I have planned it that bullets like point but now I have changed bullets like square. So I have defined new variables.
         var route, topLineStart, topLineFinish, botLineStart, botLineFinish, topIndex, botIndex;
-        if((!off.bullet.ready) && isItOnTheLine(off.bullet.tx, off.bullet.tx+7, def.sprite.x, def.sprite.x + 80)) {
-            if(isItOnTheLine(off.bullet.ty, off.bullet.ty+7, def.sprite.y, def.sprite.y + 110)) {
-                route = off.bullet.ty;
+        if((!off.bullet[index].ready) && isItOnTheLine(off.bullet[index].x, off.bullet[index].x+7, def.sprite.x, def.sprite.x + 80)) {
+            if(isItOnTheLine(off.bullet[index].y, off.bullet[index].y+7, def.sprite.y, def.sprite.y + 110)) {
+                route = off.bullet[index].y;
                 topIndex = route - def.sprite.y;
                 topindex = (topIndex>4)? topIndex: 0;
                 botIndex = route - def.sprite.y + 7;
@@ -457,11 +348,11 @@
                     botLineFinish = playerHitBox [botIndex][1];
                 } catch {
                 }
-                if(isItOnTheLine(off.bullet.tx, off.bullet.tx+7, def.sprite.x + topLineStart, def.sprite.x+topLineFinish) ||
-                    isItOnTheLine(off.bullet.tx, off.bullet.tx+7, def.sprite.x + botLineStart, def.sprite.x+botLineFinish)
+                if(isItOnTheLine(off.bullet[index].x, off.bullet[index].x+7, def.sprite.x + topLineStart, def.sprite.x+topLineFinish) ||
+                    isItOnTheLine(off.bullet[index].x, off.bullet[index].x+7, def.sprite.x + botLineStart, def.sprite.x+botLineFinish)
                 ) {
-                    def.hp -= off.bullet.damage;
-                    off.bullet.kill();
+                    def.hp -= off.damage;
+                    off.bullet[index].kill();
                     pulseControl();
                 }
             }
@@ -473,36 +364,27 @@
 
         window.requestAnimationFrame(gameLoop);
         
-        /*   // I will add multiple bullet some day
-        //bullets control
-        for (var i = 0; i<p1.bulletLen; i++) { 
-            if (p1.bullets[i].fire) {
-                console.log("this bulet will fire");
-            }
-        }
-         * 
-         * multiple bullet not now
-         *
-        */
-
-
         // bullets can live inside canvas
-        if((p1.bullet.tx > canvas.width) ||
-            (p1.bullet.tx < 0) ||
-            (p1.bullet.ty > canvas.height) ||
-            (p1.bullet.ty < 0)){ 
-                p1.bullet.kill();
+        if((p1.bullet[0].x > canvas.width) ||
+            (p1.bullet[0].x < 0) ||
+            (p1.bullet[0].y > canvas.height) ||
+            (p1.bullet[0].y < 0)){ 
+                p1.bullet[0].kill();
         }
-        if((p2.bullet.tx > canvas.width) ||
-            (p2.bullet.tx < 0) ||
-            (p2.bullet.ty > canvas.height) ||
-            (p2.bullet.ty < 0)){ 
-                p2.bullet.kill();
+        if((p2.bullet[0].x > canvas.width) ||
+            (p2.bullet[0].x < 0) ||
+            (p2.bullet[0].y > canvas.height) ||
+            (p2.bullet[0].y < 0)){ 
+                p2.bullet[0].kill();
         }
 
 
-        attackControl(p1,p2);
-        attackControl(p2,p1);
+        for (var i = 0; i<p1.capacityOfMagazine; i++) {
+            attackControl(p1,p2, i);
+        }
+        for (var i = 0; i<p2.capacityOfMagazine; i++) {
+            attackControl(p2,p1, i);
+        }
 
         
 
@@ -511,15 +393,19 @@
         context.clearRect(0,0,canvas.width, canvas.height);
 
         //draw bullets
-        if(!p1.bullet.ready){   //the bullet going
-            p1.bullet.tx += p1.bullet.tDirectionSign * p1.bullet.txSpeed;
-            p1.bullet.ty += p1.bullet.tDirectionSign * p1.bullet.tySpeed;
-            drawCircle(p1.bullet.tx, p1.bullet.ty, 3.5, "black");
+        for (var i = 0; i<p1.capacityOfMagazine; i++) {
+            if(!p1.bullet[i].ready){   //the bullet going
+                p1.bullet[i].x += p1.bullet[i].directionSign * p1.bullet[i].xSpeed;
+                p1.bullet[i].y += p1.bullet[i].directionSign * p1.bullet[i].ySpeed;
+                drawCircle(p1.bullet[i].x, p1.bullet[i].y, 3.5, "black");
+            }
         }
-        if(!p2.bullet.ready){
-            p2.bullet.tx += p2.bullet.tDirectionSign * p2.bullet.txSpeed;
-            p2.bullet.ty += p2.bullet.tDirectionSign * p2.bullet.tySpeed;
-            drawCircle(p2.bullet.tx, p2.bullet.ty, 3.5, "black");
+        for ( var i = 0; i<p2.capacityOfMagazine; i++) {
+            if(!p2.bullet[i].ready){
+                p2.bullet[i].x += p2.bullet[i].directionSign * p2.bullet[i].xSpeed;
+                p2.bullet[i].y += p2.bullet[i].directionSign * p2.bullet[i].ySpeed;
+                drawCircle(p2.bullet[i].x, p2.bullet[i].y, 3.5, "black");
+            }
         }
 
         //control for animation
@@ -551,36 +437,16 @@
         // player1, to detect keys
         if(p1.live) {
             if (68 in keys) {  // right
-                p1.move(+1, "x");
-                p1.bullet.xSpeed = p1.bullet.speed;
-                p1.bullet.ySpeed = 0;
-                p1.bullet.directionSign = 1;
-                p1.bullet.barrelX = p1.x + 70;
-                p1.bullet.barrelY = p1.y + 35;
+                p1.move(+1, "x", p1.bSpeed, 0, 1, p1.x + 70, p1.y + 35);
             } if (65 in keys) {  // left
-                p1.move(-1, "x");
-                p1.bullet.xSpeed = p1.bullet.speed;
-                p1.bullet.ySpeed = 0;
-                p1.bullet.directionSign = -1;
-                p1.bullet.barrelX = p1.x + 0;
-                p1.bullet.barrelY = p1.y + 35;
+                p1.move(-1, "x", p1.bSpeed, 0, -1, p1.x + 0, p1.y + 35);
             } if (83 in keys) {  // bottom
-                p1.move(+1, "y");
-                p1.bullet.xSpeed = 0;
-                p1.bullet.ySpeed = p1.bullet.speed;
-                p1.bullet.directionSign = +1;
-                p1.bullet.barrelX = p1.x + 35;
-                p1.bullet.barrelY = p1.y + 50;
+                p1.move(+1, "y", 0, p1.bSpeed, 1, p1.x + 35, p1.y + 50);
             } if (87 in keys) {  // top
-                p1.move(-1, "y");
-                p1.bullet.xSpeed = 0;
-                p1.bullet.ySpeed = p1.bullet.speed;
-                p1.bullet.directionSign = -1;
-                p1.bullet.barrelX = p1.x + 55;
-                p1.bullet.barrelY = p1.y + 35;
+                p1.move(-1, "y", 0, p1.bSpeed, -1, p1.x + 55, p1.y + 35);
             }
             if (70 in keys) {
-                p1.bullet.fire();
+                p1.fire();
             }
         } else if(p1.drawMenuBool) {
             if (68 in keys) {  // right
@@ -608,38 +474,17 @@
         // player2, to detect keys
         if (p2.live) {
             if (39 in keys) {   // right
-                p2.move(+1, 'x');
-                p2.bullet.xSpeed = p2.bullet.speed;
-                p2.bullet.ySpeed = 0;
-                p2.bullet.directionSign = 1;
-                p2.bullet.barrelX = p2.x + 70;
-                p2.bullet.barrelY = p2.y + 35;
+                p2.move(+1, "x", p2.bSpeed, 0, 1, p2.x + 70, p2.y + 35);
             } if (37 in keys) {  // left
-                p2.move(-1, 'x');
-                p2.bullet.xSpeed = p2.bullet.speed;
-                p2.bullet.ySpeed = 0;
-                p2.bullet.directionSign = -1;
-                p2.bullet.barrelX = p2.x + 0;
-                p2.bullet.barrelY = p2.y + 35;
+                p2.move(-1, "x", p2.bSpeed, 0, -1, p2.x + 0, p2.y + 35);
             } if (40 in keys) { // bottom
-                p2.move(+1, 'y');
-                p2.bullet.xSpeed = 0;
-                p2.bullet.ySpeed = p2.bullet.speed;
-                p2.bullet.directionSign = +1;
-                p2.bullet.barrelX = p2.x + 35;
-                p2.bullet.barrelY = p2.y + 50;
-
+                p2.move(+1, "y", 0, p2.bSpeed, 1, p2.x + 35, p2.y + 50);
             } if (38 in keys) { // top
-                p2.move(-1, 'y');
-                p2.bullet.xSpeed = 0;
-                p2.bullet.ySpeed = p2.bullet.speed;
-                p2.bullet.directionSign = -1;
-                p2.bullet.barrelX = p2.x + 55;
-                p2.bullet.barrelY = p2.y + 35;
+                p2.move(-1, "y", 0, p2.bSpeed, -1, p2.x + 55, p2.y + 35);
             }
 
             if (106 in keys) {
-                p2.bullet.fire();
+                p2.fire();
             }
         } else if (p2.drawMenuBool) {
             if (39 in keys) {   // right
