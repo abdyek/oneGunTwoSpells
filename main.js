@@ -88,11 +88,20 @@
         this.bxSpeed=0;  // this and next line are for bullets moving
         this.bySpeed=0;
         this.bDirectionSign = +1; // --> +1 or -1, if directionSing is +1, bullet will go right.
-        this.bIndex = -1;
+        this.bIndex = 0;
+        this.bColor = "black";
         
         this.barrelCooldownTime = 250;
+        this.fillMagazineTime = 5000;
+        this.delayTime = this.barrelCooldownTime;  // I use this for setTimeout function in fire method
+
         this.barrelReady = false;
         this.capacityOfMagazine = 10;
+        this.isMagazineOkey = true;
+
+        this.timerBarToFillMagazine = 70;
+        this.timerBarToFillMagazinePixelPerFrame = 70 / (this.fillMagazineTime /1000* 60);
+
         this.bullet = new Array();
         for (var i =0; i<this.capacityOfMagazine; i++) {
             this.bullet[i] = {
@@ -143,9 +152,8 @@
     }
     
     Player.prototype.fire = function() {
-        if((this.barrelReady) && (this.bullet[0].ready)) {
+        if(this.barrelReady) {
             this.barrelReady = false;
-            this.bIndex = (this.bIndex+1 == this.capacityOfMagazine) ? 0 : this.bIndex + 1 ;
             this.bullet[this.bIndex].x = this.barrelX;
             this.bullet[this.bIndex].y = this.barrelY;
             this.bullet[this.bIndex].xSpeed = this.bxSpeed;
@@ -153,9 +161,20 @@
             this.bullet[this.bIndex].directionSign = this.bDirectionSign;
             this.bullet[this.bIndex].ready = false;
 
+            this.bIndex += 1;
+            //this.bIndex = (this.bIndex == this.capacityOfMagazine) ? 0 : this.bIndex;
+            if(this.bIndex == this.capacityOfMagazine) {
+                this.bIndex = 0;
+                this.isMagazineOkey = false;
+                this.delayTime = this.fillMagazineTime;
+            }
+
             setTimeout(()=> { // to delay per press
+                this.isMagazineOkey = true;
+                this.timerBarToFillMagazine = 70;
                 this.barrelReady = true;
-            }, this.barrelCooldownTime);
+                this.delayTime = this.barrelCooldownTime;
+            }, this.delayTime);
         }
     }
 
@@ -167,10 +186,23 @@
         // draw body
         drawRectangle(this.x + 5, this.y+45, 70, 60, this.bodyColor);
         this.drawHealtBar();
+        this.drawMagazineBar();
     }
     Player.prototype.drawHealtBar = function() {
         var barWidth = (this.hp <= 0) ? 0:(70 * this.hp / 100)
-        drawRectangle(this.x + 5, this.y - 10, barWidth, 7, "#a5ffa0");
+        drawRectangle(this.x + 5, this.y - 20, barWidth, 7, "#a5ffa0");
+    }
+    Player.prototype.drawMagazineBar = function () {
+        if(this.isMagazineOkey) {
+            var block = 70 / this.capacityOfMagazine;
+            var blockCenter = block/2;
+            for (var i = 0; i<this.capacityOfMagazine-this.bIndex; i++) {  // current size of bullets
+                drawCircle(this.x + 5 + block*i+blockCenter-2, this.y - 10, 2, "#555");
+            }
+        } else {
+            drawRectangle(this.x+5, this.y - 10, this.timerBarToFillMagazine, 3, "#555");
+            this.timerBarToFillMagazine -= this.timerBarToFillMagazinePixelPerFrame;
+        }
     }
     Player.prototype.drawMenu = function() {
         if(this.drawMenuBool) {
@@ -365,25 +397,24 @@
         window.requestAnimationFrame(gameLoop);
         
         // bullets can live inside canvas
-        if((p1.bullet[0].x > canvas.width) ||
-            (p1.bullet[0].x < 0) ||
-            (p1.bullet[0].y > canvas.height) ||
-            (p1.bullet[0].y < 0)){ 
-                p1.bullet[0].kill();
-        }
-        if((p2.bullet[0].x > canvas.width) ||
-            (p2.bullet[0].x < 0) ||
-            (p2.bullet[0].y > canvas.height) ||
-            (p2.bullet[0].y < 0)){ 
-                p2.bullet[0].kill();
-        }
-
 
         for (var i = 0; i<p1.capacityOfMagazine; i++) {
             attackControl(p1,p2, i);
+            if((p1.bullet[i].x > canvas.width) ||
+                (p1.bullet[i].x < 0) ||
+                (p1.bullet[i].y > canvas.height) ||
+                (p1.bullet[i].y < 0)){ 
+                    p1.bullet[i].kill();
+            }
         }
         for (var i = 0; i<p2.capacityOfMagazine; i++) {
             attackControl(p2,p1, i);
+            if((p2.bullet[i].x > canvas.width) ||
+                (p2.bullet[i].x < 0) ||
+                (p2.bullet[i].y > canvas.height) ||
+                (p2.bullet[i].y < 0)){ 
+                    p2.bullet[i].kill();
+            }
         }
 
         
@@ -397,14 +428,14 @@
             if(!p1.bullet[i].ready){   //the bullet going
                 p1.bullet[i].x += p1.bullet[i].directionSign * p1.bullet[i].xSpeed;
                 p1.bullet[i].y += p1.bullet[i].directionSign * p1.bullet[i].ySpeed;
-                drawCircle(p1.bullet[i].x, p1.bullet[i].y, 3.5, "black");
+                drawCircle(p1.bullet[i].x, p1.bullet[i].y, 3.5, p1.bColor);
             }
         }
         for ( var i = 0; i<p2.capacityOfMagazine; i++) {
             if(!p2.bullet[i].ready){
                 p2.bullet[i].x += p2.bullet[i].directionSign * p2.bullet[i].xSpeed;
                 p2.bullet[i].y += p2.bullet[i].directionSign * p2.bullet[i].ySpeed;
-                drawCircle(p2.bullet[i].x, p2.bullet[i].y, 3.5, "black");
+                drawCircle(p2.bullet[i].x, p2.bullet[i].y, 3.5, p2.bColor);
             }
         }
 
