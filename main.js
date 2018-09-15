@@ -44,6 +44,18 @@
         bodyColor : ['#74b9ff', '#a29bfe', '#fd79a8', '#00b894', '#63cdda', '#eccc68', '#7bed9f', '#ff4757'],
     };
 
+    var guns = [];        
+    guns[0] = {
+        position: [[60, 45],[25,20],[-14,43],[20, 55]],     // image (0,0) position
+        barrelPosition: [[93, 51],[37, 15],[-20,51],[37,87]],      // for right, top, left, bottom
+        subRectanglePosition: [[0,0],[34,0],[69, 0],[105,0]],
+        // damage:
+        // barrelCooldown:
+        // capacityOfMagazine:
+        // fillMagazineTime:
+        //  I will transport them here sometime
+    };
+
     //Get canvas
     canvas = document.getElementById("canvas");
     context = canvas.getContext("2d");
@@ -59,6 +71,8 @@
     readyTicImage = new Image();
     readyTicImage.src = "images/ready-tic.png";
 
+    gunImage = new Image();
+    gunImage.src = "images/gun-all-position.png";
 
     // Player
     function Player(x, y, headColor, bodyColor) {
@@ -79,6 +93,8 @@
             y : this.y
         }) 
 
+        this.gunIndex = 0;
+        this.barrelIndex = 0;  // right --> 0 , top --> 1 , left --> 2, bottom --> 3
         this.barrelX = 0;
         this.barrelY = 0;
         this.damage = 3;
@@ -92,11 +108,11 @@
         this.bColor = "black";
         
         this.barrelCooldownTime = 250;
-        this.fillMagazineTime = 5000;
+        this.fillMagazineTime = 3000;
         this.delayTime = this.barrelCooldownTime;  // I use this for setTimeout function in fire method
 
         this.barrelReady = false;
-        this.capacityOfMagazine = 10;
+        this.capacityOfMagazine = 6;
         this.isMagazineOkey = true;
 
         this.timerBarToFillMagazine = 70;
@@ -139,16 +155,20 @@
     };
 
     // methods
-    Player.prototype.move = function(sign, xOrY, bxSpeed, bySpeed, bDirectionSign, barrelX, barrelY) {
+    Player.prototype.move = function(sign, xOrY) {
         this[xOrY] += sign * this.speed;
         this.sprite[xOrY] = this[xOrY];
         this.moving = true;     // for animation
-        
+    }
+
+    Player.prototype.changeRouteOfBarrel = function(bxSpeed, bySpeed, bDirectionSign, barrelIndex) {  // barrelIndex right --> 0 , top --> 1 , left --> 2, bottom --> 3
+        this.barrelIndex = barrelIndex;
         this.bxSpeed = bxSpeed;
         this.bySpeed = bySpeed;
         this.bDirectionSign = bDirectionSign;
-        this.barrelX = barrelX;
-        this.barrelY = barrelY;
+        this.barrelX = this.x + guns[this.gunIndex].barrelPosition[this.barrelIndex][0];
+        this.barrelY = this.y + guns[this.gunIndex].barrelPosition[this.barrelIndex][1];
+        
     }
     
     Player.prototype.fire = function() {
@@ -187,6 +207,15 @@
         drawRectangle(this.x + 5, this.y+45, 70, 60, this.bodyColor);
         this.drawHealtBar();
         this.drawMagazineBar();
+        // draw gun
+        context.drawImage(gunImage,
+            guns[this.gunIndex].subRectanglePosition[this.barrelIndex][0],
+            guns[this.gunIndex].subRectanglePosition[this.barrelIndex][1],
+            35,35,
+            this.x + guns[this.gunIndex].position[this.barrelIndex][0],
+            this.y + guns[this.gunIndex].position[this.barrelIndex][1],
+            35,35
+        );
     }
     Player.prototype.drawHealtBar = function() {
         var barWidth = (this.hp <= 0) ? 0:(70 * this.hp / 100)
@@ -423,6 +452,22 @@
         //clear the canvas
         context.clearRect(0,0,canvas.width, canvas.height);
 
+
+        //control for animation
+        if(p1.moving) {                 
+            p1.sprite.update();
+        }
+
+        //draw players
+        p1.sprite.render();
+        p1.draw();
+    
+        if(p2.moving) {
+            p2.sprite.update();
+        }
+        p2.sprite.render();
+        p2.draw();
+        
         //draw bullets
         for (var i = 0; i<p1.capacityOfMagazine; i++) {
             if(!p1.bullet[i].ready){   //the bullet going
@@ -439,21 +484,6 @@
             }
         }
 
-        //control for animation
-        if(p1.moving) {                 
-            p1.sprite.update();
-        }
-
-        //draw players
-        p1.sprite.render();
-        p1.draw();
-    
-        if(p2.moving) {
-            p2.sprite.update();
-        }
-        p2.sprite.render();
-        p2.draw();
-
 
         // draw menu per frame
         p1.drawMenu();
@@ -468,13 +498,17 @@
         // player1, to detect keys
         if(p1.live) {
             if (68 in keys) {  // right
-                p1.move(+1, "x", p1.bSpeed, 0, 1, p1.x + 70, p1.y + 35);
+                p1.move(+1, "x");
+                p1.changeRouteOfBarrel(p1.bSpeed, 0, 1, 0);
             } if (65 in keys) {  // left
-                p1.move(-1, "x", p1.bSpeed, 0, -1, p1.x + 0, p1.y + 35);
-            } if (83 in keys) {  // bottom
-                p1.move(+1, "y", 0, p1.bSpeed, 1, p1.x + 35, p1.y + 50);
+                p1.move(-1, "x");
+                p1.changeRouteOfBarrel( p1.bSpeed, 0, -1, 2);
+            } if (83 in keys) {  // bottom);
+                p1.move(+1, "y");
+                p1.changeRouteOfBarrel(0, p1.bSpeed, 1, 3);
             } if (87 in keys) {  // top
-                p1.move(-1, "y", 0, p1.bSpeed, -1, p1.x + 55, p1.y + 35);
+                p1.move(-1, "y");
+                p1.changeRouteOfBarrel(0, p1.bSpeed, -1, 1);
             }
             if (70 in keys) {
                 p1.fire();
@@ -504,14 +538,18 @@
 
         // player2, to detect keys
         if (p2.live) {
-            if (39 in keys) {   // right
-                p2.move(+1, "x", p2.bSpeed, 0, 1, p2.x + 70, p2.y + 35);
+            if (39 in keys) {  // right
+                p2.move(+1, "x");
+                p2.changeRouteOfBarrel(p2.bSpeed, 0, 1, 0);
             } if (37 in keys) {  // left
-                p2.move(-1, "x", p2.bSpeed, 0, -1, p2.x + 0, p2.y + 35);
-            } if (40 in keys) { // bottom
-                p2.move(+1, "y", 0, p2.bSpeed, 1, p2.x + 35, p2.y + 50);
-            } if (38 in keys) { // top
-                p2.move(-1, "y", 0, p2.bSpeed, -1, p2.x + 55, p2.y + 35);
+                p2.move(-1, "x");
+                p2.changeRouteOfBarrel( p2.bSpeed, 0, -1, 2);
+            } if (40 in keys) {  // bottom);
+                p2.move(+1, "y");
+                p2.changeRouteOfBarrel(0, p2.bSpeed, 1, 3);
+            } if (38 in keys) {  // top
+                p2.move(-1, "y");
+                p2.changeRouteOfBarrel(0, p2.bSpeed, -1, 1);
             }
 
             if (106 in keys) {
