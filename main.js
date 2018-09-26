@@ -156,7 +156,8 @@ function Player(x, y, headColor, bodyColor) {
             list: ["headColor", "bodyColor"]
     };
     this.currentLine = "headColor";
-    this.drawMenuBool = true;
+    this.drawMenuVisible = true;
+    this.drawMenuControl = false;
     this.readyToPlay = false;
 };
 
@@ -240,7 +241,7 @@ Player.prototype.drawMagazineBar = function () {
     }
 }
 Player.prototype.drawMenu = function() {
-    if(this.drawMenuBool) {
+    if(this.drawMenuVisible) {
         // draw palet
         var d = 0;     //for only draw colors, I couldn't find appropriate name
         for (var i = 0; i<colors.headColor.length; i++) {
@@ -450,7 +451,7 @@ function gameLoop() {
             if (players[i].keys[4] in keys) {
                 players[i].fire();
             }
-        } else if(players[i].drawMenuBool) {
+        } else if(players[i].drawMenuVisible && players[i].drawMenuControl) {
             if (players[i].keys[0] in keys) {  // right
                 if(!players[i].cursorStop) {
                     players[i].cursorMove(1);

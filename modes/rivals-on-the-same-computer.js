@@ -36,11 +36,12 @@ var readyToPlayControl = function () {
     if(p1.readyToPlay && p2.readyToPlay) {
         setTimeout(function() {
             p1.live = true;
-            p1.drawMenuBool = false;
+            p1.drawMenuVisible = false;
             p2.live = true;
-            p2.drawMenuBool = false;
+            p2.drawMenuVisible = false;
             p1.barrelReady = true;
             p2.barrelReady = true;
         },  100);
     }
 }
+

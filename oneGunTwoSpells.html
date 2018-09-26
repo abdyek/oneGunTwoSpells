@@ -6,11 +6,17 @@
 	<meta name="keywords" content="browser game, open source game, JS">
 	<meta name="author" content="Yunus Emre Bulut">
 	<title>One Gun Two Spells</title>
+    <link rel="stylesheet"  href="style/style.css"/>
 </head>
 <body>
     <canvas id="canvas" style="background-color:#eee; display:table; margin:0 auto;"></canvas>
     <script src="jquery.min.js"></script>
+    <script src="menu.js"></script>
 	<script src="main.js"></script>
     <script src="modes/rivals-on-the-same-computer.js"></script>
+    <div id="menu">
+        <div class="button primary" onclick="gameStart()">Play</div>
+        <div class="button info" ><a href="https://github.com/abdyek/oneGunTwoSpells#oneguntwospells" target="_blank" >View Game Info</a></div>
+    </div>
 </body>
 </html>

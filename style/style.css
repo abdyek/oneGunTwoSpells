@@ -1,0 +1,42 @@
+#menu {
+    height:100px;
+    width:200px;
+    position: absolute;
+    top: 100px;
+    left: calc(50% - 100px);
+}
+
+.button {
+    color: #fff;
+    cursor:pointer;
+    text-align:center;
+    height:30px;
+    width: auto;
+    line-height:30px;
+    font-size:15px;
+    border-radius:.25rem;
+    margin-bottom: 5px;
+	-moz-user-select: -moz-none;
+	-khtml-user-select: none;
+	-webkit-user-select: none;
+	-o-user-select: none;
+	-ms-user-select: none;
+	user-select: none
+}
+
+:focus {outline:none}
+
+.button a {
+    text-decoration:none;
+    color: #fff;
+}
+
+.primary {
+    background-color: #007bff;
+    border-color:#007bff;
+}
+
+.info {
+    background-color: #17a2b8;
+    border-color:#17a2b8;
+}
