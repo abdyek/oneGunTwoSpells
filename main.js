@@ -87,6 +87,8 @@ function Player(x, y, headColor, bodyColor) {
     this.moving = false;  //for animation (cute feet)
     this.headColor = headColor;
     this.bodyColor = bodyColor;
+    this.imageWidth = 80;
+    this.imageHeight = 120;
     this.live = false;
     this.sprite = sprite({       
         context: context,
@@ -163,6 +165,19 @@ function Player(x, y, headColor, bodyColor) {
 
 // methods
 Player.prototype.move = function(sign, xOrY) {
+    if (this['x'] < 0) {
+        this['x'] = 0;
+        this.sprite['x'] = 0;
+    } else if (this['x'] > canvas.width - this.imageWidth) {
+        this['x'] = canvas.width - this.imageWidth;
+        this.sprite['x'] = canvas.width - this.imageWidth;
+    } else if (this['y'] < 0 ) {
+        this['y'] = 0;
+        this.sprite['y'] = 0;
+    } else if (this['y'] > canvas.height - this.imageHeight) {
+        this['y'] = canvas.height - this.imageHeight;
+        this.sprite['y'] = canvas.height - this.imageHeight;
+    }
     this[xOrY] += sign * this.speed;
     this.sprite[xOrY] = this[xOrY];
     this.moving = true;     // for animation
