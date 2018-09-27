@@ -119,12 +119,14 @@ function Player(x, y, headColor, bodyColor) {
     this.fillMagazineTime = 3000;
     this.delayTime = this.barrelCooldownTime;  // I use this for setTimeout function in fire method
 
-    this.barrelReady = false;
+    this.barrelReady = true;
     this.capacityOfMagazine = 6;
     this.isMagazineOkey = true;
 
     this.timerBarToFillMagazine = 70;
     this.timerBarToFillMagazinePixelPerFrame = 70 / (this.fillMagazineTime /1000* 60);
+    this.timerBarToCooldownBarrel = 70;
+    this.timerBarToCooldownBarrelPPF = 70 / (this.barrelCooldownTime / 1000 * 60);
 
     this.bullet = new Array();
     for (var i =0; i<this.capacityOfMagazine; i++) {
@@ -202,6 +204,7 @@ Player.prototype.fire = function() {
         this.bullet[this.bIndex].ySpeed = this.bySpeed;
         this.bullet[this.bIndex].directionSign = this.bDirectionSign;
         this.bullet[this.bIndex].ready = false;
+        this.timerBarToCooldownBarrel = 70;
 
         this.bIndex += 1;
         //this.bIndex = (this.bIndex == this.capacityOfMagazine) ? 0 : this.bIndex;
@@ -228,6 +231,7 @@ Player.prototype.draw = function() {
     // draw body
     drawRectangle(this.x + 5, this.y+45, 70, 60, this.bodyColor);
     this.drawHealtBar();
+    this.drawCooldownBarrelBar();
     this.drawMagazineBar();
     // draw gun
     context.drawImage(gunImage,
@@ -251,8 +255,14 @@ Player.prototype.drawMagazineBar = function () {
             drawCircle(this.x + 5 + block*i+blockCenter-2, this.y - 10, 2, "#555");
         }
     } else {
-        drawRectangle(this.x+5, this.y - 10, this.timerBarToFillMagazine, 3, "#555");
+        drawRectangle(this.x+5, this.y - 10, this.timerBarToFillMagazine, 4, "#555");
         this.timerBarToFillMagazine -= this.timerBarToFillMagazinePixelPerFrame;
+    }
+}
+Player.prototype.drawCooldownBarrelBar = function() {
+    if (!this.barrelReady && this.isMagazineOkey) {
+        drawRectangle(this.x + 5, this.y - 10, this.timerBarToCooldownBarrel, 4, "#BBB");
+        this.timerBarToCooldownBarrel -= this.timerBarToCooldownBarrelPPF;
     }
 }
 Player.prototype.drawMenu = function() {
