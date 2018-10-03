@@ -3,18 +3,21 @@ Hello Everyone!!
 This is my first canvas game. I have been trying to learn game algorithm without any game engine.
 The goal of this game is to die after your rival because everyone will die some day.
 
-Firstly, choose your favorite colors with your move keys. if you're ready to fight, press your fire key
+Firsly, choose your favorite colors with your move keys. if you're ready to fight, press your fire key
 
-# controls
-player1
-W - move up
-A - move left
-S - move down
-D - move right
-F - fire
+## Game Info
+### Goal
+Kill your rival
+### Controls
+Player 1
+* Move Up - W
+* Move Left - A
+* Move Down - S
+* Move Right - D
+* Fire - F
 
-player2
-Arrow Keys are control to move.
-fire --> *
+Player 2
+* Move - Arrow Keys
+* Fire - *
 
 Play now! [abdyek.github.io/oneGunTwoSpells](https://abdyek.github.io/oneGunTwoSpells/oneGunTwoSpells)
