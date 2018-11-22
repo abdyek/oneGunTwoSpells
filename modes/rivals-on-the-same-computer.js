@@ -1,8 +1,8 @@
 
 // creating players
 
-var p1 = new Player(20, canvas.height/2-60, colors.headColor[0], colors.bodyColor[0]);
-    p2 = new Player(canvas.width-100, canvas.height/2-60, colors.headColor[0], colors.bodyColor[0]);
+var p1 = new Player(20, canvas.height/2-60, colors.headColor[0], colors.bodyColor[0], m1);
+    p2 = new Player(canvas.width-100, canvas.height/2-60, colors.headColor[0], colors.bodyColor[0], m1);
 
 // to set keys
 p1.keys.push(68,87,65,83,70); //right, top, left, bottom, fire

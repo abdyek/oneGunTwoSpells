@@ -77,8 +77,79 @@ readyTicImage.src = "images/ready-tic.png";
 gunImage = new Image();
 gunImage.src = "images/gun-all-position.png";
 
+var Point = function(x, y) {
+    this.x = x;
+    this.y = y;
+}
+function Rectangle(x, y, wid, hei, color) {  // color geçici sonra silicem, şimdi test amaçlı
+    this.x = x;
+    this.y = y;
+    this.width = wid;
+    this.height = hei;
+    this.color = color;
+    this.points = {
+        topLe: new Point(this.x, this.y),
+        topRi: new Point(this.x + this.width, this.y),
+        botLe: new Point(this.x, this.y + this.height),
+        botRi: new Point(this.x + this.width, this.y + this.height),
+    }
+}
+Rectangle.prototype.updatePosition = function (x, y) {
+    this.x += x;
+    this.y += y;
+    this.points.topLe.x += x;
+    this.points.topRi.x += x;
+    this.points.botLe.x += x;
+    this.points.botRi.x += x;
+    this.points.topLe.y += y;
+    this.points.topRi.y += y;
+    this.points.botLe.y += y;
+    this.points.botRi.y += y;
+}
+Rectangle.prototype.draw = function() {
+    drawRectangle(this.x, this.y, this.width, this.height, this.color);
+}
+
+
+// Bullet
+function Bullet(calibre) {
+    this.directionSign= +1,
+    this.calibre = calibre;
+    this.hitbox = new Rectangle(0, 0, calibre, calibre);
+    this.ready = true;  //it is ready for firing
+}
+Bullet.prototype.kill = function() {
+    this.ready = true;
+}
+
+// Model
+function Model(arr) {
+    this.x = 0;
+    this.y = 0;
+    this.hitboxes = new Array();
+    //while(arr[i]!=0) {
+    //    this.hitboxes[i] = new Rectangle(arr[i].x, arr[i].y, arr[i].width, arr[i].height);
+    //    i++;
+    //}
+    for(i = 0; i<arr.length; i++) {
+        this.hitboxes[i] = new Rectangle(arr[i].x,  arr[i].y, arr[i].width, arr[i].height, arr[i].color);
+    }
+}
+Model.prototype.updatePosition = function(x, y) {
+    //diffX = x - this.x;
+    //diffY = y - this.y;
+    this.x += x;
+    this.y += y;
+    // updating hitboxes
+    for(i = 0; i<this.hitboxes.length; i++) {
+        this.hitboxes[i].updatePosition(x, y); // --> parantezlerin içi ne olması gerekiyor kafam basmadı
+    }
+}
+
+m1 = [{x: 20, y: 5, width:40, height: 35, color: "#dea16f"}, {x: 25, y: 40, width: 30, height: 5, coor: "#dea16f"}, {x: 5, y: 45, width: 70, height: 60, color: "#1d1d1d"}];
+
 // Player
-function Player(x, y, headColor, bodyColor) {
+function Player(x, y, headColor, bodyColor, m) {
     players.push(this);
     this.rival;
     this.keys = [] //right, top, left, bottom, fire
@@ -90,6 +161,9 @@ function Player(x, y, headColor, bodyColor) {
     this.imageWidth = 80;
     this.imageHeight = 120;
     this.live = false;
+
+    this.model = new Model(m);
+    this.model.updatePosition(this.x, this.y);
     this.sprite = sprite({       
         context: context,
         width:480,
@@ -97,8 +171,8 @@ function Player(x, y, headColor, bodyColor) {
         image: playerImage,
         numberOfFrames: 6,
         ticksPerFrame: 6,
-        x : this.x,
-        y : this.y
+        x : this.model.x,
+        y : this.model.y
     }) 
 
     this.gunIndex = 0;
@@ -106,6 +180,7 @@ function Player(x, y, headColor, bodyColor) {
     this.barrelX = 0;
     this.barrelY = 0;
     this.damage = 3;
+    this.calibreOfBullet = 6;  // 1 calibre of bullet = 1px
     this.bx=0;
     this.by=0;
     this.bSpeed=15;  // default speed
@@ -130,18 +205,19 @@ function Player(x, y, headColor, bodyColor) {
 
     this.bullet = new Array();
     for (var i =0; i<this.capacityOfMagazine; i++) {
-        this.bullet[i] = {
-            // temporary x, y, xSpeed, ySpeed, directionSign --> those are for drawing
-            x : 0,
-            y : 0,
-            xSpeed : 0,
-            ySpeed : 0,
-            directionSign: +1,
-            ready: true,  //it is ready for firing
-            kill : function() {
-                this.ready = true;
-            }
-        }
+        this.bullet[i] = new Bullet(this.calibreOfBullet);
+       // this.bullet[i] = {
+       //     // temporary x, y, xSpeed, ySpeed, directionSign --> those are for drawing
+       //     x : 0,
+       //     y : 0,
+       //     xSpeed : 0,
+       //     ySpeed : 0,
+       //     directionSign: +1,
+       //     ready: true,  //it is ready for firing
+       //     kill : function() {
+       //         this.ready = true;
+       //     }
+       // }
     }
     
     //Default ability
@@ -166,7 +242,8 @@ function Player(x, y, headColor, bodyColor) {
 };
 
 // methods
-Player.prototype.move = function(sign, xOrY) {
+Player.prototype.move = function(x, y) {
+    /*
     if (this['x'] < 0) {
         this['x'] = 0;
         this.sprite['x'] = 0;
@@ -180,9 +257,18 @@ Player.prototype.move = function(sign, xOrY) {
         this['y'] = canvas.height - this.imageHeight;
         this.sprite['y'] = canvas.height - this.imageHeight;
     }
-    this[xOrY] += sign * this.speed;
-    this.sprite[xOrY] = this[xOrY];
+     a bug is here ! :( I will fix it
+    */
+    //this[xOrY] += sign * this.speed;
+    //this.sprite[xOrY] = this[xOrY];
     this.moving = true;     // for animation
+    this.model.updatePosition(x, y);
+    this.updateSpritePosition();
+}
+
+Player.prototype.updateSpritePosition = function() {
+    this.sprite.x = this.model.x;
+    this.sprite.y = this.model.y;
 }
 
 Player.prototype.changeRouteOfBarrel = function(bxSpeed, bySpeed, bDirectionSign, barrelIndex) {  // barrelIndex right --> 0 , top --> 1 , left --> 2, bottom --> 3
@@ -224,12 +310,16 @@ Player.prototype.fire = function() {
 }
 
 Player.prototype.draw = function() {
+    // draw model
+    for(a = 0; a<this.model.hitboxes.length; a++) { // i yapınca patlıyor
+        this.model.hitboxes[a].draw();
+    }
     // draw head
-    drawRectangle(this.x + 20, this.y+5, 40, 35, this.headColor);
+    //drawRectangle(this.x + 20, this.y+5, 40, 35, this.headColor);
     // draw neck
-    drawRectangle(this.x + 25, this.y+40, 30, 5, this.headColor);
+    //drawRectangle(this.x + 25, this.y+40, 30, 5, this.headColor);
     // draw body
-    drawRectangle(this.x + 5, this.y+45, 70, 60, this.bodyColor);
+    //drawRectangle(this.x + 5, this.y+45, 70, 60, this.bodyColor);
     this.drawHealtBar();
     this.drawCooldownBarrelBar();
     this.drawMagazineBar();
@@ -238,8 +328,8 @@ Player.prototype.draw = function() {
         guns[this.gunIndex].subRectanglePosition[this.barrelIndex][0],
         guns[this.gunIndex].subRectanglePosition[this.barrelIndex][1],
         35,35,
-        this.x + guns[this.gunIndex].position[this.barrelIndex][0],
-        this.y + guns[this.gunIndex].position[this.barrelIndex][1],
+        this.model.x + guns[this.gunIndex].position[this.barrelIndex][0],
+        this.model.y + guns[this.gunIndex].position[this.barrelIndex][1],
         35,35
     );
 }
