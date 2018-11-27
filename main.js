@@ -106,20 +106,124 @@ Rectangle.prototype.updatePosition = function (x, y) {
     this.points.botLe.y += y;
     this.points.botRi.y += y;
 }
+Rectangle.prototype.teleport = function (x , y) {
+    x -= this.x;
+    y -= this.y;
+    this.updatePosition(x,y);
+}
+
 Rectangle.prototype.draw = function() {
     drawRectangle(this.x, this.y, this.width, this.height, this.color);
 }
 
+// functions
+var isPointInRect = function(point, rectangle, recoveryPixel) {
+    recoveryPixel = recoveryPixel || 0;
+    if ((point.x + recoveryPixel > rectangle.x) && (point.x < rectangle.x + rectangle.width) && (point.y + recoveryPixel > rectangle.y) && (point.y < rectangle.y + rectangle.height)){
+        //console.log("inside");
+        return true;
+    } else {
+        //console.log("outside");
+        return false;
+    }
+}
+var isRectInRect = function(rec, rec2) {
+    var key = false;
+    if(isPointInRect(rec.points.topLe, rec2) ||
+       isPointInRect(rec.points.topRi, rec2) ||
+       isPointInRect(rec.points.botLe, rec2) ||
+       isPointInRect(rec.points.botRi, rec2)) {
+        //console.log("inside");
+        key = true;
+    } else if(isPointInRect(rec2.points.topLe, rec) ||
+       isPointInRect(rec2.points.topRi, rec) ||
+       isPointInRect(rec2.points.botLe, rec) ||
+       isPointInRect(rec2.points.botRi, rec)) {
+        //console.log("inside");
+        key = true;
+    }
+    return key;
+}
+
+// ^ functions
+
 
 // Bullet
-function Bullet(calibre) {
-    this.directionSign= +1,
+function Bullet(calibre, color) {
+    this.directionSign = {x: 0, y: 0}; // -1 or +1
     this.calibre = calibre;
-    this.hitbox = new Rectangle(0, 0, calibre, calibre);
+    this.speed = {x: 0, y:0};
+    this.hitbox = new Rectangle(0, 0, calibre, calibre, color);
     this.ready = true;  //it is ready for firing
 }
 Bullet.prototype.kill = function() {
     this.ready = true;
+}
+
+g1 = {capOfMag: 6, damage: 30, calibre: 6, bColor: "purple", barCool: 250, magCool: 3000, bSpeed : 14};
+// Gun
+function Gun(arr) { 
+    this.capOfMag = arr.capOfMag  // capOfMag - capacityOfMagazine
+    this.damage = arr.damage;
+    this.calibre = arr.calibre;
+    this.bColor = arr.bColor;
+    this.bSpeed = arr.bSpeed;
+    this.speedBuffer = {x: 0, y:0};
+    this.barCool = arr.barCool; // barCool - barrelCooldown
+    this.magCool = arr.magCool; // magCool - magazineCooldown
+    this.isMagOkey = true; // is magazine okey?
+    this.bulInd = 0; // the bullet is waiting for firing
+
+    this.lenBarCool = 70;  // length of remaining barrel cooldown
+    this.lenMagCool = 70;  // length of remaining magazine cooldown
+    this.decBarCoolPF = 70 / (this.barCool / 1000 * 60);  // decreasing quantity per frame
+    this.decMagCoolPF = 70 / (this.magCool /1000* 60);  // decreasing quantity per frame
+    
+    // for firing mechanic 
+    this.readyToFire = true;
+    this.barrel = {x: 0, y : 0};
+    
+    this.bullets = new Array();
+    for (i = 0; i<this.capOfMag; i++) {
+        this.bullets[i] = new Bullet(this.calibre, this.bColor);
+    }
+}
+
+Gun.prototype.fire = function() {
+    if(this.readyToFire)  { 
+        //console.log("bang bang");
+        this.readyToFire = false;
+        this.bullets[this.bulInd].hitbox.teleport(this.barrel.x, this.barrel.y);
+        this.bullets[this.bulInd].speed.x = this.speedBuffer.x;
+        this.bullets[this.bulInd].speed.y = this.speedBuffer.y;
+        this.bullets[this.bulInd].ready = false;
+        this.bulInd++;
+        this.lenMagCool = 70;
+        if(this.bulInd==this.capOfMag) {
+            this.isMagOkey = false;
+            this.lenBarCool = 70;
+            setTimeout(()=> {
+                this.bulInd = 0;
+                this.isMagOkey = true;
+                this.readyToFire = true;
+            },this.magCool);
+        } else {
+            setTimeout(()=> {
+                this.readyToFire = true;
+            }, this.barCool);
+        }
+    }
+}
+
+Gun.prototype.drawBul = function() {
+    for(b = 0; b<this.bullets.length; b++) {
+        if(!this.bullets[b].ready){
+            this.bullets[b].hitbox.draw();
+            this.bullets[b].hitbox.updatePosition(this.bullets[b].speed.x, this.bullets[b].speed.y);
+            //this.bullets[b].hitbox.x += this.bullets[b].speed.x;
+            //this.bullets[b].hitbox.y += this.bullets[b].speed.y;
+        }
+    }
 }
 
 // Model
@@ -127,19 +231,14 @@ function Model(arr) {
     this.x = 0;
     this.y = 0;
     this.hitboxes = new Array();
-    //while(arr[i]!=0) {
-    //    this.hitboxes[i] = new Rectangle(arr[i].x, arr[i].y, arr[i].width, arr[i].height);
-    //    i++;
-    //}
     for(i = 0; i<arr.length; i++) {
         this.hitboxes[i] = new Rectangle(arr[i].x,  arr[i].y, arr[i].width, arr[i].height, arr[i].color);
     }
 }
 Model.prototype.updatePosition = function(x, y) {
-    //diffX = x - this.x;
-    //diffY = y - this.y;
     this.x += x;
     this.y += y;
+    this.direction;  //right, top, left, bot
     // updating hitboxes
     for(i = 0; i<this.hitboxes.length; i++) {
         this.hitboxes[i].updatePosition(x, y); // --> parantezlerin içi ne olması gerekiyor kafam basmadı
@@ -147,23 +246,25 @@ Model.prototype.updatePosition = function(x, y) {
 }
 
 m1 = [{x: 20, y: 5, width:40, height: 35, color: "#dea16f"}, {x: 25, y: 40, width: 30, height: 5, coor: "#dea16f"}, {x: 5, y: 45, width: 70, height: 60, color: "#1d1d1d"}];
+m2 = [{x: 25, y: 5, width:40, height: 35, color: "#dea16f"}, {x: 27, y: 40, width: 30, height: 5, coor: "#dea16f"}, {x: 5, y: 45, width: 70, height: 60, color: "#005691"}];
 
 // Player
-function Player(x, y, headColor, bodyColor, m) {
+function Player(x, y, headColor, bodyColor, m, g) {
     players.push(this);
     this.rival;
     this.keys = [] //right, top, left, bottom, fire
     this.x = x;  //first location
     this.y = y;  //
     this.moving = false;  //for animation (cute feet)
-    this.headColor = headColor;
-    this.bodyColor = bodyColor;
+    //this.headColor = headColor;
+    //this.bodyColor = bodyColor;
     this.imageWidth = 80;
     this.imageHeight = 120;
     this.live = false;
 
     this.model = new Model(m);
     this.model.updatePosition(this.x, this.y);
+    this.gun = new Gun(g);
     this.sprite = sprite({       
         context: context,
         width:480,
@@ -176,36 +277,36 @@ function Player(x, y, headColor, bodyColor, m) {
     }) 
 
     this.gunIndex = 0;
-    this.barrelIndex = 0;  // right --> 0 , top --> 1 , left --> 2, bottom --> 3
-    this.barrelX = 0;
-    this.barrelY = 0;
-    this.damage = 3;
-    this.calibreOfBullet = 6;  // 1 calibre of bullet = 1px
-    this.bx=0;
-    this.by=0;
-    this.bSpeed=15;  // default speed
-    this.bxSpeed=0;  // this and next line are for bullets moving
-    this.bySpeed=0;
-    this.bDirectionSign = +1; // --> +1 or -1, if directionSing is +1, bullet will go right.
-    this.bIndex = 0;
-    this.bColor = "black";
+    //this.barrelIndex = 0;  // right --> 0 , top --> 1 , left --> 2, bottom --> 3
+    //this.barrelX = 0;
+    //this.barrelY = 0;
+    //this.damage = 3;
+    //this.calibreOfBullet = 6;  // 1 calibre of bullet = 1px
+    //this.bx=0;
+    //this.by=0;
+    //this.bIndex = 0;
+    //this.bColor = "purple";
     
-    this.barrelCooldownTime = 250;
-    this.fillMagazineTime = 3000;
-    this.delayTime = this.barrelCooldownTime;  // I use this for setTimeout function in fire method
+    //this.barrelCooldownTime = 250;  // I will kill them
+    //this.fillMagazineTime = 3000;   // I will kill them
 
-    this.barrelReady = true;
-    this.capacityOfMagazine = 6;
-    this.isMagazineOkey = true;
+    //this.delayTime = this.barrelCooldownTime;  // I use this for setTimeout function in fire method
 
-    this.timerBarToFillMagazine = 70;
-    this.timerBarToFillMagazinePixelPerFrame = 70 / (this.fillMagazineTime /1000* 60);
-    this.timerBarToCooldownBarrel = 70;
-    this.timerBarToCooldownBarrelPPF = 70 / (this.barrelCooldownTime / 1000 * 60);
+    //this.barrelReady = true;
+    //this.capacityOfMagazine = 6;
+    //this.isMagazineOkey = true;
 
-    this.bullet = new Array();
-    for (var i =0; i<this.capacityOfMagazine; i++) {
-        this.bullet[i] = new Bullet(this.calibreOfBullet);
+    //this.dir = {ri: false, top: false, le:false, bot: false};
+    // direction , right , top, left, bottom
+
+    //this.timerBarToFillMagazine = 70;
+    //this.timerBarToFillMagazinePixelPerFrame = 70 / (this.fillMagazineTime /1000* 60);
+    //this.timerBarToCooldownBarrel = 70;
+    //this.timerBarToCooldownBarrelPPF = 70 / (this.barrelCooldownTime / 1000 * 60);
+
+    //this.bullet = new Array();   -- old system
+    //for (var i =0; i<this.capacityOfMagazine; i++) {
+        //this.bullet[i] = new Bullet(this.calibreOfBullet, this.bColor);
        // this.bullet[i] = {
        //     // temporary x, y, xSpeed, ySpeed, directionSign --> those are for drawing
        //     x : 0,
@@ -218,7 +319,7 @@ function Player(x, y, headColor, bodyColor, m) {
        //         this.ready = true;
        //     }
        // }
-    }
+    //}
     
     //Default ability
     this.speed = 4;
@@ -230,11 +331,11 @@ function Player(x, y, headColor, bodyColor, m) {
     this.lineIndex= 0;
     this.pixelToJump= 16;
     this.cursorStop = false;
-    this.lines = {
-            headColor: {x: this.x+5, y: this.y-83, pixelToJump: 16, index: 0, lastIndex : colors.headColor.length},
-            bodyColor: {x: this.x+2, y: this.y-53,  pixelToJump: 10, index: 0, lastIndex : colors.bodyColor.length},
-            list: ["headColor", "bodyColor"]
-    };
+    //this.lines = {
+            //headColor: {x: this.x+5, y: this.y-83, pixelToJump: 16, index: 0, lastIndex : colors.headColor.length},
+            //bodyColor: {x: this.x+2, y: this.y-53,  pixelToJump: 10, index: 0, lastIndex : colors.bodyColor.length},
+            //list: ["headColor", "bodyColor"]
+    //};
     this.currentLine = "headColor";
     this.drawMenuVisible = true;
     this.drawMenuControl = false;
@@ -264,11 +365,60 @@ Player.prototype.move = function(x, y) {
     this.moving = true;     // for animation
     this.model.updatePosition(x, y);
     this.updateSpritePosition();
+    this.updateBarrelPosition();
 }
 
+Player.prototype.updateBarrelPosition = function() {
+    this.gun.barrel.x = this.model.x;
+    this.gun.barrel.y = this.model.y;
+    var X, Y;
+    if ((this.keys[0] in keys) && (this.keys[1] in keys)) {   // top - right 
+        X = this.gun.bSpeed; Y = - this.gun.bSpeed;
+    } else if ((this.keys[0] in keys) && (this.keys[3] in keys)) {   // bottom - right
+        X = this.gun.bSpeed; Y = this.gun.bSpeed;
+    } else if ((this.keys[2] in keys) && (this.keys[1] in keys)) {   // top - left
+        X = - this.gun.bSpeed; Y = - this.gun.bSpeed;
+    } else if ((this.keys[2] in keys) && (this.keys[3] in keys)) {   // bottom - left
+        X = - this.gun.bSpeed; Y = + this.gun.bSpeed;
+    } else if (this.keys[0] in keys) {  // right
+        X = this.gun.bSpeed; Y = 0;
+    } else if (this.keys[2] in keys) {  // left
+        X = - this.gun.bSpeed; Y = 0;
+    } else if (this.keys[3] in keys) {  // bottom);
+        X = 0; Y = this.gun.bSpeed;
+    } else if (this.keys[1] in keys) {  // top
+        X = 0; Y = - this.gun.bSpeed;
+    }
+
+    this.gun.speedBuffer.x = X;
+    this.gun.speedBuffer.y = Y;
+
+    //this.gun.bullets[this.gun.bulInd].speed.x = X;  // have a bug
+    //this.gun.bullets[this.gun.bulInd].speed.y = Y;
+}
 Player.prototype.updateSpritePosition = function() {
     this.sprite.x = this.model.x;
     this.sprite.y = this.model.y;
+}
+
+Player.prototype.attackControl = function() {
+    for(i = 0; i<this.gun.bullets.length; i++) {
+        if(!this.gun.bullets[i].ready) {
+            for(j = 0; j<this.rival.model.hitboxes.length; j++) {
+                if(isRectInRect(this.gun.bullets[i].hitbox, this.rival.model.hitboxes[j])) {
+                    p1.rival.hp -= p1.gun.damage;
+                    this.gun.bullets[i].kill();
+                    if(p1.rival.hp<0) {
+                        console.log("p1 winner!!");
+                    }
+                }
+            }
+        }
+    }
+    //if(isRectInRect(this.gun.bullets[0].hitbox, this.rival.model.hitboxes[0])) {
+    //    console.log("BANG BANG!!!");
+    //    this.gun.bullets[0].kill();
+    //}
 }
 
 Player.prototype.changeRouteOfBarrel = function(bxSpeed, bySpeed, bDirectionSign, barrelIndex) {  // barrelIndex right --> 0 , top --> 1 , left --> 2, bottom --> 3
@@ -281,7 +431,7 @@ Player.prototype.changeRouteOfBarrel = function(bxSpeed, bySpeed, bDirectionSign
     
 }
 
-Player.prototype.fire = function() {
+Player.prototype.fire = function() { // old system
     if(this.barrelReady) {
         this.barrelReady = false;
         this.bullet[this.bIndex].x = this.barrelX;
@@ -322,7 +472,7 @@ Player.prototype.draw = function() {
     //drawRectangle(this.x + 5, this.y+45, 70, 60, this.bodyColor);
     this.drawHealtBar();
     this.drawCooldownBarrelBar();
-    this.drawMagazineBar();
+    this.drawMagBar();
     // draw gun
     context.drawImage(gunImage,
         guns[this.gunIndex].subRectanglePosition[this.barrelIndex][0],
@@ -335,53 +485,53 @@ Player.prototype.draw = function() {
 }
 Player.prototype.drawHealtBar = function() {
     var barWidth = (this.hp <= 0) ? 0:(70 * this.hp / 100)
-    drawRectangle(this.x + 5, this.y - 20, barWidth, 7, "#a5ffa0");
+    drawRectangle(this.model.x + 5, this.model.y - 20, barWidth, 7, "#a5ffa0");
 }
-Player.prototype.drawMagazineBar = function () {
-    if(this.isMagazineOkey) {
-        var block = 70 / this.capacityOfMagazine;
+Player.prototype.drawMagBar = function () {
+    if(this.gun.isMagOkey) {
+        var block = 70 / this.gun.capOfMag;
         var blockCenter = block/2;
-        for (var i = 0; i<this.capacityOfMagazine-this.bIndex; i++) {  // current size of bullets
+        for (var i = 0; i<this.gun.capOfMag-this.gun.bulInd; i++) {  // current size of bullets
             // drawing bullets
-            drawCircle(this.x + 5 + block*i+blockCenter-2, this.y - 10, 2, "#555");
+            drawCircle(this.model.x + 5 + block*i+blockCenter-2, this.model.y - 10, 2, "#555");
         }
     } else {
         // drawing cooldown bar
-        drawRectangle(this.x+5, this.y - 10, this.timerBarToFillMagazine, 4, "#BBB");
-        this.timerBarToFillMagazine -= this.timerBarToFillMagazinePixelPerFrame;
+        drawRectangle(this.model.x+5, this.model.y - 10, this.gun.lenBarCool , 4, "#BBB");
+        this.gun.lenBarCool -= this.gun.decMagCoolPF;
     }
 }
 Player.prototype.drawCooldownBarrelBar = function() {
-    if (!this.barrelReady && this.isMagazineOkey) {
-        drawRectangle(this.x + 5, this.y - 10, this.timerBarToCooldownBarrel, 4, "#BBB");
-        this.timerBarToCooldownBarrel -= this.timerBarToCooldownBarrelPPF;
+    if (!this.gun.readyToFire && this.gun.isMagOkey) {
+        drawRectangle(this.model.x + 5, this.model.y - 10, this.gun.lenMagCool, 4, "#BBB");
+        this.gun.lenMagCool-= this.gun.decBarCoolPF;
     }
 }
-Player.prototype.drawMenu = function() {
-    if(this.drawMenuVisible) {
-        // draw palet
-        var d = 0;     //for only draw colors, I couldn't find appropriate name
-        for (var i = 0; i<colors.headColor.length; i++) {
-            drawRectangle(this.x+d, this.y - 90, 16, 20, colors.headColor[i]);
-            d += 16;
-        }
-        d = 0;
-        for (var i = 0; i<colors.bodyColor.length; i++) {
-            drawRectangle(this.x+d, this.y-60, 10, 20, colors.bodyColor[i]);
-            d += 10;
-        }
-        // draw shadows of cursor
-        for (var i = 0; i<this.lines.list.length; i++) {
-            var line = this.lines[this.lines.list[i]];
-            drawRectangle(line.x + line.pixelToJump * line.index, line.y, 6, 6, "grey");
-        }
-        // draw cursor
-        drawRectangle(this.cursorX, this.cursorY, 6, 6, "black");
-        if(this.readyToPlay) {
-            context.drawImage(readyTicImage, this.x + 3,this.y + 23);
-        }
-    }
-}
+//Player.prototype.drawMenu = function() {
+//    if(this.drawMenuVisible) {
+//        // draw palet
+//        var d = 0;     //for only draw colors, I couldn't find appropriate name
+//        for (var i = 0; i<colors.headColor.length; i++) {
+//            drawRectangle(this.x+d, this.y - 90, 16, 20, colors.headColor[i]);
+//            d += 16;
+//        }
+//        d = 0;
+//        for (var i = 0; i<colors.bodyColor.length; i++) {
+//            drawRectangle(this.x+d, this.y-60, 10, 20, colors.bodyColor[i]);
+//            d += 10;
+//        }
+//        // draw shadows of cursor
+//        for (var i = 0; i<this.lines.list.length; i++) {
+//            var line = this.lines[this.lines.list[i]];
+//            drawRectangle(line.x + line.pixelToJump * line.index, line.y, 6, 6, "grey");
+//        }
+//        // draw cursor
+//        drawRectangle(this.cursorX, this.cursorY, 6, 6, "black");
+//        if(this.readyToPlay) {
+//            context.drawImage(readyTicImage, this.x + 3,this.y + 23);
+//        }
+//    }
+//}
 
 Player.prototype.die = function() {
     this.headColor = "#FF3535";
@@ -446,7 +596,7 @@ Player.prototype.readyTicDraw = function() {
  */ 
 
     var playerHitBox = { 0: [50,30], 5: [20, 60], 6: [20, 60], 7: [20, 60], 8: [20, 60], 9: [20, 60], 10: [20, 60], 11: [20, 60], 12: [20, 60], 13: [20, 60], 14: [20, 60], 15: [20, 60], 16: [20, 60], 17: [20, 60], 18: [20, 60], 19: [20, 60], 20: [20, 60], 21: [20, 60], 22: [20, 60], 23: [20, 60], 24: [20, 60], 25: [20, 60], 26: [20, 60], 27: [20, 60], 28: [20, 60], 29: [20, 60], 30: [20, 60], 31: [20, 60], 32: [20, 60], 33: [20, 60], 34: [20, 60], 35: [20, 60], 36: [20, 60], 37: [20, 60], 38: [20, 60], 39: [20, 60], 40: [20, 60], 41: [25, 55], 42: [25, 55], 43: [25, 55], 44: [25, 55], 45: [5, 75], 46: [5, 75], 47: [5, 75], 48: [5, 75], 49: [5, 75], 50: [5, 75], 51: [5, 75], 52: [5, 75], 53: [5, 75], 54: [5, 75], 55: [5, 75], 56: [5, 75], 57: [5, 75], 58: [5, 75], 59: [5, 75], 60: [5, 75], 61: [5, 75], 62: [5, 75], 63: [5, 75], 64: [5, 75], 65: [5, 75], 66: [5, 75], 67: [5, 75], 68: [5, 75], 69: [5, 75], 70: [5, 75], 71: [5, 75], 72: [5, 75], 73: [5, 75], 74: [5, 75], 75: [5, 75], 76: [5, 75], 77: [5, 75], 78: [5, 75], 79: [5, 75], 80: [5, 75], 81: [5, 75], 82: [5, 75], 83: [5, 75], 84: [5, 75], 85: [5, 75], 86: [5, 75], 87: [5, 75], 88: [5, 75], 89: [5, 75], 90: [5, 75], 91: [5, 75], 92: [5, 75], 93: [5, 75], 94: [5, 75], 95: [5, 75], 96: [5, 75], 97: [5, 75], 98: [5, 75], 99: [5, 75], 100: [5, 75], 101: [5, 75], 102: [5, 75], 103: [5, 75], 104: [5, 75], 105: [5, 75], 106: [25, 55], 107: [25, 55], 108: [25, 55], 109: [25, 55], 110: [25, 55], 111: [25, 55], 112: [25, 55], 113: [25, 55], 114: [25, 55], 115: [25, 55]
-    }
+    };
 
 
 // ^ testing
@@ -475,35 +625,35 @@ var isItOnTheLine= function(itsStart, itsFinish, lineStart, lineFinish) {
     }
 }
 
-var attackControl = function(off, def, index) {  // off - offensive player , def - defensive player
-    // did bullets arrive the rival of its owner?
-    // 7 is width and height of bullets
-    // I have planned it that bullets like point but now I have changed bullets like square. So I have defined new variables.
-    var route, topLineStart, topLineFinish, botLineStart, botLineFinish, topIndex, botIndex;
-    if((!off.bullet[index].ready) && isItOnTheLine(off.bullet[index].x, off.bullet[index].x+7, def.sprite.x, def.sprite.x + 80)) {
-        if(isItOnTheLine(off.bullet[index].y, off.bullet[index].y+7, def.sprite.y, def.sprite.y + 110)) {
-            route = off.bullet[index].y;
-            topIndex = route - def.sprite.y;
-            topindex = (topIndex>4)? topIndex: 0;
-            botIndex = route - def.sprite.y + 7;
-            botIndex = (botIndex>4)? botIndex: 0;
-            try {   //this is bad code, I will delete try-catch some day!
-                topLineStart = playerHitBox [topIndex][0];
-                topLineFinish = playerHitBox [topIndex][1];
-                botLineStart = playerHitBox [botIndex][0];
-                botLineFinish = playerHitBox [botIndex][1];
-            } catch {
-            }
-            if(isItOnTheLine(off.bullet[index].x, off.bullet[index].x+7, def.sprite.x + topLineStart, def.sprite.x+topLineFinish) ||
-                isItOnTheLine(off.bullet[index].x, off.bullet[index].x+7, def.sprite.x + botLineStart, def.sprite.x+botLineFinish)
-            ) {
-                def.hp -= off.damage;
-                off.bullet[index].kill();
-                pulseControl();
-            }
-        }
-    }
-}
+//var attackControl = function(off, def, index) {  // off - offensive player , def - defensive player
+//    // did bullets arrive the rival of its owner?
+//    // 7 is width and height of bullets
+//    // I have planned it that bullets like point but now I have changed bullets like square. So I have defined new variables.
+//    var route, topLineStart, topLineFinish, botLineStart, botLineFinish, topIndex, botIndex;
+//    if((!off.bullet[index].ready) && isItOnTheLine(off.bullet[index].x, off.bullet[index].x+7, def.sprite.x, def.sprite.x + 80)) {
+//        if(isItOnTheLine(off.bullet[index].y, off.bullet[index].y+7, def.sprite.y, def.sprite.y + 110)) {
+//            route = off.bullet[index].y;
+//            topIndex = route - def.sprite.y;
+//            topindex = (topIndex>4)? topIndex: 0;
+//            botIndex = route - def.sprite.y + 7;
+//            botIndex = (botIndex>4)? botIndex: 0;
+//            try {   //this is bad code, I will delete try-catch some day!
+//                topLineStart = playerHitBox [topIndex][0];
+//                topLineFinish = playerHitBox [topIndex][1];
+//                botLineStart = playerHitBox [botIndex][0];
+//                botLineFinish = playerHitBox [botIndex][1];
+//            } catch {
+//            }
+//            if(isItOnTheLine(off.bullet[index].x, off.bullet[index].x+7, def.sprite.x + topLineStart, def.sprite.x+topLineFinish) ||
+//                isItOnTheLine(off.bullet[index].x, off.bullet[index].x+7, def.sprite.x + botLineStart, def.sprite.x+botLineFinish)
+//            ) {
+//                def.hp -= off.damage;
+//                off.bullet[index].kill();
+//                pulseControl();
+//            }
+//        }
+//    }
+//}
 
 
 

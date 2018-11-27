@@ -5,7 +5,9 @@ function gameLoop() {
     //clear the canvas
     context.clearRect(0,0,canvas.width, canvas.height);
     
+    // p1
     p1.live = true;  // for testing
+    p1.draw();
     if(p1.live) {
        if (p1.keys[0] in keys) {  // right
            p1.move(p1.speed, 0);
@@ -19,12 +21,20 @@ function gameLoop() {
        } if (p1.keys[1] in keys) {  // top
            p1.move(0, - p1.speed);
            p1.changeRouteOfBarrel(0, p1.bSpeed, -1, 1);
-       }
-       if (p1.keys[4] in keys) {
-           p1.fire();
+       } if (p1.keys[4] in keys) {
+           p1.gun.fire();
        }
     }
+    // drawing bullets
+    
+    //for(b = 0; b<p1.gun.bullets.length; b++) { if(!p1.gun.bullets[b].ready){ p1.gun.bullets[b].hitbox.draw(); }   }
+    p1.gun.drawBul();
+    p1.attackControl();
+    //p1.gun.bullets[0].hitbox.x += 1;
+
+    // p2
     p2.live = true;  // for testing
+    p2.draw();
     if(p2.live) {
        if (p2.keys[0] in keys) {  // right
            p2.move(p2.speed, 0);
@@ -43,18 +53,23 @@ function gameLoop() {
            p2.fire();
        }
     }
-    
+    // drawing bullets
+   // for(b = 0; b<p2.bullet.length; b++) {
+   //     p2.bullet[b].hitbox.draw();
+   // }
+
+
     for(i = 0; i<players.length; i++) {
         // bullets can live inside canvas
-        //for (var j = 0; j<players[i].capacityOfMagazine; j++) {
-        //    attackControl(players[i],players[i].rival, j);
-        //    if((players[i].bullet[j].x > canvas.width) ||
-        //        (players[i].bullet[j].x < 0) ||
-        //        (players[i].bullet[j].y > canvas.height) ||
-        //        (players[i].bullet[j].y < 0)){ 
-        //            players[i].bullet[j].kill();
-        //    }
-        //}
+       // for (var j = 0; j<players[i].capacityOfMagazine; j++) {
+       //     //attackControl(players[i],players[i].rival, j);
+       //     if((players[i].bullet[j].x > canvas.width) ||
+       //         (players[i].bullet[j].x < 0) ||
+       //         (players[i].bullet[j].y > canvas.height) ||
+       //         (players[i].bullet[j].y < 0)){ 
+       //             players[i].bullet[j].kill();
+       //     }
+       // }
 
         //control for animation
         if(players[i].moving) {                 
@@ -63,18 +78,26 @@ function gameLoop() {
 
         //draw players
         players[i].sprite.render();
-        players[i].draw();
+        //players[i].draw();
 
-        //draw bullets
-        for (var j = 0; j<players[i].capacityOfMagazine; j++) {
-           // if(!players[i].bullet[j].ready){   //the bullet going
-           //     players[i].bullet[j].x += players[i].bullet[j].directionSign * players[i].bullet[j].xSpeed;
-           //     players[i].bullet[j].y += players[i].bullet[j].directionSign * players[i].bullet[j].ySpeed;
-           //     drawCircle(players[i].bullet[j].x, players[i].bullet[j].y, 3.5, p1.bColor);
-           // }
-        }
+        //draw bullets  -- old system
+        //for (var j = 0; j<players[i].capacityOfMagazine; j++) {
+        //    if(!players[i].bullet[j].ready){   //the bullet going
+        //        players[i].bullet[j].x += players[i].bullet[j].directionSign * players[i].bullet[j].xSpeed;
+        //        players[i].bullet[j].y += players[i].bullet[j].directionSign * players[i].bullet[j].ySpeed;
+        //        drawCircle(players[i].bullet[j].x, players[i].bullet[j].y, 3.5, p1.bColor);
+        //    }
+        //}
+        
+        //for (var j = 0; j<players[i].capacityOfMagazine; j++) {
+        //    if(!players[i].bullet[j].ready){   //the bullet going
+        //        players[i].bullet[j].hitbox.x = players[i].bullet[j].directionSign * players[i].bullet[j].xSpeed;
+        //        players[i].bullet[j].hitbox.updatePosition(players[i].bullet[j].directionSign * players[i].bullet[j].xSpeed,players[i].bullet[j].directionSign * players[i].bullet[j].ySpeed);
+        //    }
+        //}
+        
         // draw menu per frame
-        players[i].drawMenu();
+        //players[i].drawMenu();
 
         // this line stop animation when release moving keys
         players[i].moving = false;
